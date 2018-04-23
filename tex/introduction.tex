@@ -1,0 +1,80 @@
+\section{Einleitung}
+	\subsection{Steigende Popularität von Embedded-Entwicklung}
+	In den letzten Jahren hat der Bereich der Embedded-Systeme deutlich an Popularität gewonnen.
+	Embedded-Systeme bezeichnen prozessorbasierte Hardware, die in ein bestehendes System \textit{eingebettet} sind
+	und eine dedizierte Aufgabe übernehmen.
+	Vorangetrieben durch Trends, wie \glsit{glo:iot}, nehmen immer mehr IT-Unternehmen Embedded-Systeme
+	in ihr Repertoire auf.
+	``These embedded systems are increasingly being joined together into an ``Internet of things.'' In the future,
+	machines that are linked together in networks could revolutionize manufacturing, energy distribution, and
+	transportation systems.''\citep[]{Siemens2014}
+
+    Mitverantwortlich für den Aufschwung der Embedded-Entwicklung ist die Arduino\hyp{}Plattform, welche bereits seit 2005
+    den Fokus auf einfach zu verwendende Software und Hardware setzt. Ziel der Plattform ist es, vor allem Studenten die
+    Möglichkeiten zu geben, schnelles Hardware-Prototyping ohne große Vorkenntnisse im Hardware- und Programmierbereich
+    durchzuführen
+    \footnote{Laut der \href{https://www.arduino.cc/en/Guide/Introduction}{Hersteller-Seite} Zugriff: 5. Juli 2017}.
+    Während die Einfachheit und Schnelligkeit ein großer Verkaufspunkt der Arduino\hyp{}Plattform ist, birgt sie auch große
+    Nachteile, die es Entwicklern schwer macht damit zu arbeiten. Genauer wird dies in \ref{sec:arduino} analysiert.
+
+	``Das Gesamtmarktvolumen für Embedded-Systeme für Deutschland wird auf über 18,7 Mrd. im vergangenen Jahr geschätzt.
+      Die Anbieter tragen in 2007 dazu 3,7 Mrd. Euro bei und die Wertschöpfung in den Anwendersektoren umfasst mehr als
+      15 Mrd. Euro.''\citep[vgl. S. 1]{Bitkom2009}
+
+	Die wachsende Relevanz der Mikrocontroller-Programmierung resultiert darin, dass sich mehr Entwickler mit der
+	Thematik beschäftigen und einen Einstieg finden wollen. Vor allem im Bereich der Programmierung ist der Bedarf an
+	Entwicklern groß.
+	``Von den vier Bereichen Hardware Design, Produktion, Programmierung und Integration von Embedded-Systemen
+    ist die Softwareentwicklung und -programmierung der mitarbeiterintensivste Bereich.''\citep[vgl. S. 24]{Bitkom2009}
+
+    In der Regel bilden E-Techniker und Studierte der Technischen Informatik den Großteil der Entwickler für den
+    Embedded-Bereich, jedoch finden sich immer mehr Quereinsteiger (unter denen sich viele Software-Entwickler befinden)
+    in die Programmierung für Mikrocontroller ein.
+
+    Zusätzlich zu der wachsenden Anzahl an Entwicklern steigt auch die Anzahl an Entwicklungswerkzeugen und es stehen
+    immer mehr davon frei zur Verfügung. Die Nähe zur Hardware bringt allerdings das Problem mit sich,
+    dass diese Entwicklungswerkzeuge meistens auf ein spezifisches Modell und somit auch auf einen spezifischen
+    Hersteller eines Prozessors zugeschnitten sind.
+
+    Zudem mangelt es an kostenfreien Möglichkeiten die Firmware eines Prozessors auf Fehler zu untersuchen.
+
+    Das Open-Source-Programm
+    \glsit{glo:openocd} verfolgt das Ziel die Firmware eines Prozessor über \glsit{glo:gdb} debuggen zu können.
+    ``The GNU Debugger
+      (gdb) offers excellent debugging support, but covers only some areas of embedded systems debugging.
+      Low level tasks require additional hard- and software, and existing open source solutions for these tasks
+      are incomplete or at least partially deficient.''\citep[vgl. Introduction]{Rath2005}
+
+    Diese Arbeit beschäftigt sich mit dem Entwicklungsprozess für Embedded\hyp{}Systeme, speziell für die von \glsit{glo:arm}
+    entwickelten Cortex\hyp{}M\hyp{}Serien.
+    Dabei stehen die Aspekte der Chip-Programmierung und der Fehleranalyse im Vordergrund. Das Ziel dieser Arbeit
+    ist es, die Probleme und Herausforderungen, vor allem für Neueinsteiger, der Entwicklung für Embedded-Systeme herauszufinden und
+    einen allgemeinen Lösungsansatz dieser Problematiken sowohl für Neueinsteiger, als auch für fortgeschrittene
+    Entwickler im Embedded-Bereich zu erarbeiten.
+
+    \subsection{Gliederung}
+    Um bestimmte Design-Entscheidungen besser verstehen zu können, folgen zunächst theoretische Hintergründe zu
+    \glsit{glo:arm}-Cortex-M-Microcontrollern. Die Betrachtungsweise ähnelt dabei der eines Software-Entwicklers.
+
+    Im zweiten Abschnitt wird zunächst die \glsit{glo:arm}-Cortex-M-Familie vorgestellt und ein allgemeiner Entwicklungsprozess
+    beschrieben. Hierbei wird auf Nachteile und übliche Probleme dieses Prozesses eingegangen.
+
+    Der dritte Abschnitt befasst sich mit vorhandenen Abstraktionen (nicht Betriebssystemen) und Protokollen, welche
+    dem Entwickler einen einfacheren Zugriff auf die Hardware ermöglichen sollen oder bestimmte Funktionalitäten, wie
+    zum Beispiel Debugging, erfüllen.
+
+    Der vierte Teil geht auf die Software-seitige Fehleranalyse mit \glsit{glo:gdb} und vorhandene Software für On-Chip-Debugging
+    ein. Unterschiede zwischen Software- und Hardware-Debugging sollen hier dargelegt werden.
+
+    Als fünfter Teil folgt ein eigener Lösungsvorschlag zur Vereinfachung der Entwicklung von Embedded-Systemen.
+    Ziel ist es, auf Software- wie auf Hardware-Seite, eine Lösung zu finden, die den Entwicklungsprozess für
+    Embedded-Systeme vereinfacht. Der praktische Teil dieser Arbeit ist es, den ersten Schritt auf der Software-Seite
+    zu implementieren. Hierzu wird mit Hilfe von \glsit{glo:openocd} ein \acrshort{glo:ide}-Plugin speziell für die Embedded-Entwicklung
+    implementiert. Es folgt außerdem eine Einordnung der Rolle dieses Arbeitsschrittes in Hinblick auf die Gesamtlösung.
+
+    Anschließend wird der Inhalt der Arbeit zusammengefasst und ein Ausblick über die Weiterentwicklung der zu
+    implementierenden Plattform für Embedded-Systeme gegeben.
+    \\
+
+    Als zu testende Hardware, wird ein von Atmel hergestelltes Board mit einem Cortex-M7 Prozessor (\texttt{AT SAM E70 Q21})
+    verwendet. Das Board enthält außerdem eine Debug-Einheit mit \acrshortit{glo:cmsisdap}-Unterstützung.

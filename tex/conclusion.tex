@@ -1,0 +1,106 @@
+\section{Fazit}
+
+    \subsection{Zusammenfassung}
+    Die Entwicklung von Embedded-Systemen mit Mikrocontrollern gewinnt an Popularität. Ein Hauptgrund dafür ist der
+    Trend des \glsit{glo:iot}. Durch Plattformen wie Arduino und Raspberry Pi wird diese Entwicklung
+    herangetrieben und zugänglicher gemacht.
+
+    Die am weitesten verbreitete Chip-Architektur kommt von \glsit{glo:arm}, welche die zum heutigen Zeitpunkt relevanten
+    Prozessorfamilien Cortex-A, -R und -M entwickeln. Diese Architekturen werden an verschiedene Hardware-Hersteller
+    verkauft, wie zum Beispiel \textit{Texas Instruments}, \textit{Atmel} oder \textit{STMicroelectronics}.
+
+    Zwischen der Hardware und einer Hardware-Applikation liegen mehrere Abstraktionsschichten.
+
+    Dabei nutzt der Entwickler bzw. die Entwicklungswerkzeuge die Schichten mit den Technologien \acrshortit{glo:jtag}/\acrshortit{glo:swd} und \glsit{glo:cmsisdap}
+    (falls unterstützt).
+
+    Eine auf \glsit{glo:arm}-Cortex-basierende Applikation nutzt in der Regel ein Echtzeitbetriebssystem (oft bei Applikationen
+    mitintegriert), vom Hersteller zur Verfügung gestellte Treiber und einen \glsit{glo:hal}.
+    Diese nutzen die von \glsit{glo:arm} entwickelte unterste Abstraktionsschicht \glsit{glo:cmsis}-Core.
+
+    Der Entwicklungsprozess wird durch folgende Punkte gestört:
+    \begin{itemize}
+        \item Herstellerspezifische Hardware-Abstraktionen (Applikation schlechter portierbar)
+        \item Plattformbindende Entwicklungswerkzeuge
+        \item Teure Lizenzen
+        \item Herstellerspezifische Entwicklungswerkzeuge
+        \item Steile Lernkurve für Neueinsteiger (größtenteils durch die vorherigen Punkte veranlasst)
+    \end{itemize}
+
+    Die Analyse eines Programms auf Fehler und Effizienz spielt eine große Rolle im Entwicklungsprozess von
+    Applikationen. Dafür gibt es mehrere Ansätze, welche sich in dem Bereich der Embedded-Systeme etabliert haben,
+    jedoch meistens die Anschaffung von externer Hardware voraussetzen.
+
+    Der \acrshortit{glo:jtag}-Standard stellt eine einheitliche Schnittstelle zur Logik des Prozessors (oder jedem
+    \glsit{glo:ic}, der \acrshortit{glo:jtag} implementiert) dar, mit dem Debugging-Anweisungen, auch zur Laufzeit, an den
+    Prozessor zur Verarbeitung gesendet werden können.
+
+    Eine Alternative zur Fehleranalyse mit externer Hardware stellt \glsit{glo:cmsisdap} dar, welches auf einer Debug-Einheit in Form
+    eines \glsit{glo:ic} auf der Zielhardware verbaut ist und in den meisten Fällen einen \glsit{glo:usb}-Anschluss besitzt. Somit können
+    Debugging-Anweisungen mit Hilfe des \acrshortit{glo:jtag}-Standards vom Entwicklungssystem direkt an die Zielhardware übertragen
+    werden.
+
+    Zum Herunterladen des entwickelten Firmware-Programms und anschließend zur Fehlersuche auf der Zielhardware kann
+    neben externer Debugging-Hardware auch das Programm \glsit{glo:openocd} verwendet werden, welches durch den \acrshortit{glo:jtag}-Standard ein
+    Protokoll und die benötigte Hardware für \textit{On-Chip Debugging} zur Verfügung gestellt bekommt.
+
+    Software-seitige Ansätze, so wie \glsit{glo:openocd}, nutzen diese Technologie, um den Debugger auf dem Entwicklungssystem mit
+    der Zielhardware kommunizieren zu lassen. Diese Arbeit thematisiert unter anderem auch die Integration einer
+    solchen Software in eine \glsit{glo:ide}.
+
+    Um den genannten Problemen und Hindernissen des Entwicklungsprozesses entgegenzuwirken, wird ein Konzept für eine
+    Entwicklungsplattform mit folgenden Komponenten aufgestellt:
+    \begin{itemize}
+        \item Einfach zu nutzende und herstellerunabhängige Abstraktionsschicht für Funktionalitäten der Hardware, um
+        Applikations-Code portabler zu machen und bei der trotzdem die maximale Leistung der verwendeten Hardware
+        genutzt werden kann
+        \item Designer-\glsit{glo:ui}, welches einem Entwickler eine einfache Alternative bietet Applikationen für
+         beliebige Hardware zu entwickeln
+        \item Erweiterbare Hardware, welche aber nicht zwangsläufig verwendet werden muss
+    \end{itemize}
+
+    \subsection{Ausblick}
+    \label{sec:prospect}
+    Der nächste Schritt, um den Entwicklungsprozess von Embedded-Systemen zugänglicher zu machen, ist aus dem Konzept
+    für die Hardware einen Prototypen zu erstellen.
+
+    An dem Hardware-Prototypen kann anschließend eine Schnittstelle für den herstellerunabhängigen
+    \glsit{glo:hal} entwickelt werden. Die Implementierung der Interfaces erfolgt zunächst für die Hardware
+    des Prototypen, anschließend soll die Implementierung von so vielen verschiedenen Hardware-Ausführungen wie möglich
+    erfolgen.
+
+    Mit der Definierung der Schnittstelle kann das \textit{Designer-}\glsit{glo:ui} entwickelt werden. Unter den in
+    Abschnitt \ref{sec:modelbaseddev} aufgeführtem Paradigma zur modellbasierten Entwicklung wird eine graphische
+    Entwicklungs- und Konfigurierungsmöglichkeit erstellt.
+
+    Im Hinblick auf das \textit{Designer-}\glsit{glo:ui} soll ein abstrakter Weg gefunden werden, die Kommunikation
+    unterschiedlicher Services (Funktionalitäten von Peripherie) mit verschiedenen Protokollen zu regeln.
+    In anderen Worten: Wie lassen sich in einem Datenfluss zwischen zwei abstrahierten Hardware-Instanzen beliebige
+    Protokolle aneinanderketten, um die Kommunikation zwischen diesen zu ermöglichen?\\
+    \textbf{Beispiel:} Ein Sensor übermittelt gemessene Daten an einen Ethernet-Adapter. Zwischen den beiden
+    Peripheriegeräten wären die in Abbildung \ref{fig:protocolabstraction} dargestellten Protokollschichten denkbar.
+    \begin{figure}
+        \centering
+        \caption{Protokollschichten}
+        \label{fig:protocolabstraction}
+        \source{eigene Zeichnung}
+        \includegraphics[scale=0.6]{../Graphiken/protocol_konsch}
+    \end{figure}
+    \texttt{MyProtocol} bezeichnet dabei ein vom Entwickler definiertes Format zur Datenübertragung.
+
+    Im Verlauf des Prozesses ist nach neuen Technologien für potenzielle Alternativen zu den bis jetzt eingesetzten
+    Technologien Ausschau zu halten. Eine Vielzahl an verschiedenen Hardware-Herstellern bedeutet gleichzeitig auch
+    einen Wettlauf um die Entwicklung neuer Technologien zur Vereinfachung der Hardware-Entwicklung.
+    Beispielsweise stellt der Hersteller NXP eine Flash-\glsit{glo:api} zur Verfügung, um ein Firmware-Programm vom
+    Dateiverwaltungssystem eines Host-Systems per \glsit{glo:usb} direkt auf die Zielhardware herunterzuladen (``flashen''). Unter
+    Windows kann ein Entwickler beispielsweise die kompilierte Datei per \textit{Drag-and-Drop} auf den Flash-Speicher
+    der Zielhardware spielen.
+
+    Auch Veränderungen im Bereich der Entwicklungsumgebungen sind zu beachten. In regelmäßigen Abständen werden neue
+    Funktionalitäten hinzugefügt, von denen auch ein Entwickler für Embedded-Systeme profitieren könnte.
+
+    Der \glsit{glo:openocd} ist durch eine ähnliche aber selbst entwickelte Software zu ersetzen. Diese soll eine deutlich
+    reduzierte Version darstellen und auf die Verwendung als \glsit{glo:ide}-Plugin optimiert werden.
+
+    Die zu entwickelnden Komponenten verfolgen das Ziel, den Entwickler in allen Aspekten des Entwicklungsprozesses für
+    Embedded-Software zu unterstützen und ergeben zusammen eine neue Plattform für die Entwicklung von Embedded-Systemen.

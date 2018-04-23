@@ -1,0 +1,52 @@
+\section{Verwendung des Plugins}
+Das Plugin definiert drei Aktionen: CMake Konfiguration generieren, OpenOCD Daemon starten und Programm-Image auf die
+Ziel-Hardware spielen.
+
+Alle drei Aktionen finden sich zum Einen im Hauptmenü unter dem Menüpunkt \texttt{\underline{E}mbedded Systems} und zum
+Anderen in der Seitenleiste unter dem Toolwindow \texttt{Embedded Dev} wieder.
+
+    Um die Toolchain einzurichten, müssen bestimmte CMake-Konfigurationen vorgenommen werden. Hierzu generiert das
+    Plugin eine Datei, mit der die Toolchain ausgewählt und geprüft wird.
+
+    Die Konfigurationsdatei muss als Toolchain-Datei für CMake definiert werden. Da das Plugin (zu jetzigem Stand)
+    keinen Weg bereitstellt CMake-Optionen zu setzen, muss der Benutzer selber die CMake-Option \\
+    \texttt{-DCMAKE\_TOOLCHAIN\_FILE=arm\_toolchain.cmake} unter dem Menüpunkt \\
+    \texttt{Settings} $\rightarrow$
+    \texttt{Build, Execution, Deployment} $\rightarrow$ \texttt{CMake} $\rightarrow$ \texttt{CMake Options} eintragen.
+
+    Um die Konfigurationen zu laden, muss der CMake-Cache der IDE gelöscht und neu geladen werden. Dies kann im
+    Hauptmenü unter dem Menüpunkt \texttt{Tools} $\rightarrow$ \texttt{CMake} $\rightarrow$
+    \texttt{Reset Cache and Reload Project} getan werden.
+
+    Nun kann der Source-Code über \texttt{Build} kompiliert werden. Ein Output-Ordner kann über das Toolwindow an der
+    rechten Seite angegeben werden.\\
+    \textbf{Hinweis:} Sollte das Programm nicht kompilieren und die Fehlermeldung
+    \begin{Verbatim}
+/usr/lib/gcc/arm-none-eabi/7.1.0/../../../../arm-none-eabi/lib/libg.a
+    (lib_a-exit.o): In function `exit':
+exit.c:(.text.exit+0x2c): undefined reference to `_exit'
+        ...
+    \end{Verbatim}
+    erscheinen, so ist die in der CMake-Konfigurationsdatei \texttt{arm\_toolchain.cmake} auskommentierte Zeile
+    \begin{Verbatim}
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --specs=nosys.specs")
+    \end{Verbatim}
+    zu setzen. Nun sollte das Programm kompilieren
+    \footnote{Schuld daran sind undefinierte Funktionen, die in der ARM libc aufgerufen werden.
+    Eine vorübergehende Lösung ist das setzen des \texttt{specs}-Parameters.
+    \href{https://stackoverflow.com/a/23922211/6755839}{Siehe Frage bei Stackoverflow}}.
+
+    Ein Programm wird mit Hilfe der \texttt{Flash Binary}-Aktion auf die Zielhardware heruntergeladen.
+    Dafür müssen im \textit{OpenOCD-Panel} jeweils der Pfad zur kompilierten Programmdatei und die Exit-Adresse
+    angegeben werden. Außerdem ist es wichtig, dass der Pfad zur OpenOCD installation angegeben ist.
+
+    Zum Starten des Daemons und damit auch des GDB-Servers kann die Aktion \texttt{Start OpenOCD Daemon}
+    ausgewählt werden. Die Fehlersuche kann über eine \textit{GDB Remote Debug}-Konfiguration mit CLion ausgeführt
+    werden. Hierzu muss unter der zu erreichenden Adresse der Port des GDB-Servers mitangegeben werden. Standardmäßig
+    ist dieser bei \texttt{3333}, kann jedoch im OpenOCD-Panel verändert werden.
+    \\
+
+    Die Hardware muss JTAG/SWD und CMSIS-DAP unterstützen. OpenOCD funktioniert mit Prozessoren basierend auf den
+    ARM7/9/11,-Cortex und MIPS-Architekturen.
+
+    \textbf{Hinweis:} Es können nur die vom Prozessor unterstützten Funktionalitäten für das Debugging genutzt werden.

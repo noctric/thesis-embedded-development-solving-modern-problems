@@ -1,0 +1,234 @@
+\documentclass[12pt,a4paper, twoside]{article}
+
+% language
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% import this before anything else
+\usepackage{hyperref}
+
+
+% symbols
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+% misc
+\usepackage[acronym, xindy, toc]{glossaries}
+\usepackage[square]{natbib}
+\usepackage{makeidx}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{textcomp}
+\usepackage{todo}
+\usepackage{dirtree}
+
+\usepackage{caption}
+
+% cuz we love Rust
+\lstdefinelanguage{Rust}{
+  keywords={let, mut, move, in, use, match, fn, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={struct, enum, export, boolean, throw, import, this, self},
+  ndkeywordstyle=\color{orange}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstdefinelanguage{CMake}{
+  keywords={include, set, find\_program, string},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={struct, enum, export, boolean, throw, import, this, self},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{\#},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+% include, set, find\_program, string
+
+\fancyhead[L]{\rightmark}
+\fancyhead[R]{}
+
+
+% layout
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{fancyvrb}
+\usepackage{geometry}
+\geometry{
+	a4paper,left=35mm,right=25mm, top=3.5cm, bottom=4cm
+	}
+\usepackage{tabularx}
+\usepackage{hyphenat}
+\usepackage{float}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}} % linksbündig mit Breitenangabe
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}} % zentriert mit Breitenangabe
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}} % rechtsbündig mit Breitenangabe
+
+% silbentrennung bei Wörtern mit Umlauten
+\hyphenation{voll-stän-dig Ad-res-sen öf-fent-lich ?ber-set-zung Um-stän-de Au-then-ti-fi-zie-rungs-mög-lich-keit Mi-kro-con-trol-ler
+Em-bed-ded De-bug-ging Ab-schnitt}
+
+% caption cmd
+\newcommand{\source}[1]{\caption*{Quelle: {#1}} }
+
+% glossary in italic
+\newcommand{\glsit}[1]{\textit{\gls{#1}}}
+\newcommand{\glsplit}[1]{\textit{\glspl{#1}}}
+\newcommand{\acrshortit}[1]{\textit{\acrshort{#1}}}
+\newcommand{\acrfullit}[1]{\textit{\acrfull{#1}}}
+
+% blank pages
+\usepackage{afterpage}
+
+\newcommand\blankpage{%
+    \null
+    \thispagestyle{empty}%
+    \addtocounter{page}{-1}%
+    \newpage}
+
+
+% listings conf
+\lstset{
+  language=C,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{black},
+  stringstyle=\color{orange},
+  frame=single,
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
+  breaklines=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
+
+\author{}
+\title{}
+\date{}
+\makeindex
+\makeglossaries
+\loadglsentries{glossary.tex}
+\glsaddall
+
+\begin{document}
+
+	\pagestyle{empty}
+	
+	%-------------------------------------------------------------
+	\begin{center}
+		{
+		\Large\bf
+		Implementierung einer Software zur Vereinfachung des Entwicklungsprozesses in
+		der Firmware-Entwicklung für eingebettete Systeme mit ARM-Prozessoren
+		}\\[3cm]
+
+		{\bf Bachelorarbeit von Michael Luis Calvert}\\[1.5cm]
+
+		an der\\
+		Fachhochschule Aachen, Campus Jülich\\
+		Fachbereich Medizintechnik und Technomathematik\\
+		Studiengang {\em Scientific Programming}\\[3cm]
+
+		%vorgelegt von\\
+		%Michael Luis Calvert\\
+		%Matrikelnummer: 4012564\\[3cm]
+		Köln, \today\\[3cm]
+
+		Diese Arbeit wurde betreut von:\\[0,2cm]
+		1. Prüfer: Prof.~Dr.~Volker Sander\\
+		2. Prüfer: B.~Sc.~Lukas Knuth
+
+	\end{center}
+
+
+	%\maketitle
+
+	%{
+	%	\vspace{30mm}
+	%	\centering
+	%	Fachhochschule Aachen \\
+	%	Scientific Programming\\
+%	}
+
+	\newpage
+	\blankpage
+	%----------------------- Versicherung
+	Diese Arbeit ist von mir selbstständig angefertigt und verfasst.
+	Es sind keine anderen als die angegebenen Quellen und Hilfsmittel benutzt worden.\\[3cm]
+	Michael Luis Calvert\\[3cm]
+	\begin{tabular}{p{10cm}@{}l@{}}\hline
+	Datum, Unterschrift
+	\end{tabular}
+	
+	\newpage
+	\blankpage
+	
+	\include{./abstract}
+	
+	%\newpage
+
+	\tableofcontents
+	
+	\listoffigures
+	
+	\listoftables
+	
+	\lstlistoflistings
+	
+	\newpage
+	
+	% begin fancy headers
+	\pagestyle{fancy}
+
+	% --- for full literature list without using \cite command
+	%\nocite{*}
+
+	\include{./introduction}
+	
+	\include{./overview}
+
+	\include{./protocols}
+
+	\include{./debugging}
+
+	\include{./software_design}
+
+	\include{./conclusion}
+	
+	\include{./appendix_install}
+	
+	\include{./appendix_instruction}
+	
+	\newpage
+	
+	\printglossaries
+
+	\newpage
+	
+	\bibliographystyle{dinat}
+	\bibliography{literature}
+	
+	\newpage
+	\pagestyle{empty}
+	\include{./danksagung}
+
+\end{document}

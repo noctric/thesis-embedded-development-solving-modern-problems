@@ -1,0 +1,435 @@
+\section{Einführung in Embedded-Systeme}
+		\subsection{Arduino}
+		\label{sec:arduino}
+		Da Arduino mitverantwortlich für den Anstieg des Interesses an Microcontroller-Programmierung in der
+		Entwicklerszene ist, wird im Folgenden eine kurze Übersicht über die angebotene Technologie geliefert.
+
+		Wie oben schon aufgeführt, ist Arduino eine Plattform für die Entwicklung mit Mikrocontrollern. Dabei werden
+		sowohl Software- als auch Hardware-Komponenten angeboten, um Embedded-Programmierung zu betreiben.
+
+		Es ist ein kostenfreies \glsit{glo:ide} verfügbar, über die sogenannte \glsplit{glo:sketch} entwickelt
+		werden können. Über \glsit{glo:usb} werden diese Programme auf das Board heruntergeladen.
+	    Außerdem stehen viele Ressourcen und Programmbeispiele online sowie in zahlreichen Lehrbüchern zu Verfügung.
+	    Programmiert wird mit einer reduzierten Version der Sprache C. Um einen einfachen \glsit{glo:sketch} zu schreiben,
+	    müssen lediglich die beiden Funktionen \texttt{setup()} und \texttt{loop()} implementiert werden.
+
+        Die meisten Prozessoren der Arduino-Hardware stammen aus der Atmel-AVR Familie.
+        \\
+
+	    Während Arduino die allgemeine Entwicklung mit Mikrocontrollern sehr stark vereinfacht, sind diese
+	    Vereinfachungen oft mit Kosten verbunden.
+	    \\
+
+	    Die vereinfachte Sprache und das Framework insgesamt ermutigt den Nutzer den gesamten Code in einen \glsit{glo:sketch}, also
+	    eine Datei zu schreiben. Dies ist für viele Programmierer das genaue Gegenteil von dem, was in der Theorie
+	    gelehrt wird: Logische Aufteilung von Programmcode in Module, sprich Modularisierung.
+	    Möchte man trotzdem ein modularisiertes Programm entwerfen, wird der Nutzer gezwungen auf andere Sprachen und
+	    Werkzeuge zurückzugreifen (zum Beispiel \textit{Atmel Studio}).
+
+		Weiterhin ist das Debuggen von Firmware nur mit entsprechender Hardware möglich (siehe \ref{sec:jtag}). Wichtige
+		Funktionalitäten, wie zum Beispiel Breakpoints, werden dem Arduino-Nutzer (angenommen man verwendet das
+		Arduino-Software-Framework) vorenthalten. Hier wird in der Regel über serielle Ausgaben, ähnlich wie \texttt{printf()},
+		ein Fehler gesucht.
+
+		Arduino vereinfacht also den Einstieg in die Entwicklung von Mikrocontrollern enorm, aber macht dafür eine
+		etwas anspruchsvollere Entwicklung um einiges schwieriger.
+
+		\subsection{Raspberry Pi}
+        Raspberry Pi ist im Vergleich zu Arduino keine gesamte Entwicklungsplattform, sondern bezeichnet lediglich
+        einen \textit{Single Board Computer}, also einen kleinen (minimalen) Heim-Computer. Dieser verfolgt das Ziel eine
+        einfache Anlaufstelle für das Experimentieren mit Computer-Systemen, vor allem für Schüler und
+        Studenten, zu schaffen.
+
+        Die Prozessoren variieren je nach Modell, gehören aber meistens der \glsit{glo:arm}-Cortex-A-Familie an.
+
+        Da der Raspberry Pi einen Heimcomputer darstellt, wird in der Regel ein vollständiges und meistens angepasstes
+        Betriebssystem (beispielsweise \textit{Raspbian}, ein auf Debian basierendes Betriebssystem) installiert.
+
+        Mit Peripheriegeräten, welche sich nicht direkt auf dem Board befinden, kann über die \glsplit{glo:gpio}
+        kommuniziert werden.
+
+        Die Entwicklung mit dem Raspberry Pi ist durch die Abstraktion mit Betriebssystem nicht sehr Hardware-nah.
+        Außerdem bietet der Raspberry Pi im Vergleich zu Personal Computers einen deutlichen Preisvorteil, ist jedoch
+        kostspieliger als andere Mikrocontroller.
+
+        Für die meisten Anwendungsbereiche innerhalb der Entwicklung für Embedded-Systeme ist ein Raspberry Pi
+        letztendlich ein Übermaß, da die meisten Projekte einen sehr spezifischen Fall oder eine sehr spezifische
+        Funktion erfüllen müssen und das Raspberry Pi aber darauf ausgelegt ist mit einem Betriebssystem zu
+        laufen und somit die Komplexität deutlich erhöht wird. In Abschnitt \ref{sec:os} wird genauer auf die Thematik
+        von Betriebssystemen bei Embedded-Systemen eingegangen.
+
+	\subsection{Die ARM-Cortex-Prozessorfamilien}
+	\label{sec:cortex_fam}
+	In der \glsit{glo:arm}-Cortex-Prozessorfamilie gibt es 3 grundlegende Subklassen.
+	\begin{description}
+	    \item[Cortex-A] Das A steht für \textit{Application} und beschreibt die auf Hochleistung fixierte Prozessorfamilie.
+	    Sie werden meistens in mobilen Geräten (Smartphones, Tablets, etc...) eingesetzt und können mit einer
+	    relativ hohen Taktung betrieben werden.
+	    ``While the Cortex-A processors have high performance, the processor is not designed to
+          provide rapid response time to hardware events (i.e., real-time requirements)''\citep[Kap.~0]{Yiu2015}
+	    \item[Cortex-R] Prozessoren der Cortex-R-Familie sind ebenfalls als Hochleistungsprozessoren gedacht und
+	    vor Allen für Echtzeitsysteme entwickelt. Sie garantieren ein deterministisches Verhalten und werden in
+	    Systemen verwendet, welche zuverlässige Antworten in Echtzeit benötigen
+	    \footnote{siehe \href{https://www.arm.com/products/processors/cortex-r}{ARM Produkt-Seite}}.
+	    Praktische Verwendung finden die Prozessoren beispielsweise in der Automobilbranche, im industriellen Bereich
+	    und in der Medizintechnik.
+	    Die Prozessoren gelten aufgrund ihrer komplexen Architekturen als nicht sehr energieeffizient
+	    \citep[vgl.~Kap.~0]{Yiu2015}.
+	    \item[Cortex-M] Cortex-M-Prozessoren besetzen den \glsit{glo:mainstream}-Markt für Mikrocontroller und gelten als
+	    energieeffizient. Sie besitzen eine kürzere Pipeline zum Abarbeiten von Befehlen und laufen mit einer geringeren
+	    Taktung. Sie zeichnen sich außerdem hauptsächlich durch ihre Benutzerfreundlichkeit, kurze Antwortzeit und ihren
+	    geringen Platzaufwand aus.\\
+	    Der eingebaute \glsit{glo:nvic} bietet ein mächtiges und doch einfach zu nutzendes
+	    Interrupt Management\citep[vgl. Kap. 0]{Yiu2015}.
+	    Cortex-M-Prozessoren werden am häufigsten in Embedded-Systemen eingesetzt und besitzen eine Variation von
+	    verschiedenen Modellen für Anwendungsgebiete deren Anforderungen von Energieeffizienz und minimalen Kosten bis
+	    zu Hochleistung reichen.
+	    Abbildung \ref{fig:arm_cortex_m_rel_performance} zeigt die Leistungsunterschiede der Cortex-M-Modelle relativ
+	    zum Cortex-M0-Prozessor-Typ.
+
+%TODO CORMARK TEST
+	    \begin{figure}[h]
+	        \caption{Relative Leistung der verschiedenen Cortex-M Modelle}
+	        \source{
+	            \href{
+	                https://www.arm.com/-/media/arm-com/products/processors/Cortex-M-series-performance-graph.jpg?la=en
+	            }{
+	                ARM Produkt Seite
+	            }, Zugriff: 17.08.2017
+	        }
+	        \label{fig:arm_cortex_m_rel_performance}
+            \centering
+            \includegraphics[scale=0.3]{../Graphiken/Cortex-M-series-performance-graph.jpg}
+	    \end{figure}
+
+	\end{description}
+
+	\subsection{Erläuterung allgemeiner Begriffe}
+	Im folgenden Abschnitt werden häufig verwendete Begriffe kurz erläutert, um Missverständnisse bei
+	Formulierungen vorzubeugen und den späteren Kontext besser verstehen zu können.
+	    \begin{description}
+	        \item[Prozessor] Der Prozessor ist ein programmierbarer digitaler integrierter Schaltkreis und gilt als
+	        innerstes Modul eines Systems. Er übernimmt die Ausführung von Maschinenbefehlen und steuert andere
+	        elektrische Schaltungen\citep[vgl.~Kap.~1]{Asche2017}.
+	        \item[Mikrocontroller] Ein Mikrocontroller ist ein zusammenfassender Begriff für Prozessoren, Speicher und
+	        Ein- und Ausgabeperipherie.
+	        \item[SoC] \glsit{glo:soc} bezeichnet die Zusammenfassung oder Integration von
+	        mehreren Funktionen eines programmierbaren Systems auf einem integrierten Schaltkreis. Auch Mikrocontroller
+	        lassen sich als \glsit{glo:soc} bezeichnen.
+	        \item[RAM] Bei \glsit{glo:ram} kann auf jede Speicherzelle über die Speicheradresse direkt
+	        zugegriffen werden. Dabei ist das als Arbeitsspeicher verwendete \glsit{glo:dram} ein
+	        flüchtiger Speicher. Im Gegensatz dazu ist \glsit{glo:sram} nicht flüchtig und wird in Caches, also Zwischenspeicher,
+	        genutzt. Der Zugriff auf diesen Speicher erfolgt im Gegensatz zu Massenspeichern schnell.
+	        \item[ROM] \glsit{glo:rom} bezeichnet einen permanenten Speicher. Der Zugriff auf diesen
+	        Speicher erfolgt im Vergleich zum \glsit{glo:ram} langsam.
+	        \item[Instruction Set] Als \textit{Instruction Set} wird die Menge der vom Prozessor verstandenen Anweisungen
+	        bezeichnet. Anweisungen können den Kontrollfluss verändern, Daten aus dem Speicher lesen, schreiben oder
+	        manipulieren\citep[]{Asche2017}.
+	        \item[Firmware] Als Firmware wird das vom Prozessor auszuführende Programm bezeichnet. Dabei kann es, falls
+	        vorhanden, vom Arbeitsspeicher oder vom Flash-Speicher ausgeführt werden. Das Programm wird dabei als
+	        \textit{Image} in den Speicher geladen und ausgeführt.
+	        \item[Peripherie] Alle externen Geräte und Anschlüsse, die sich auf dem Board bzw. innerhalb des
+	        eingebetteten Systems befinden und mit dem Prozessor kommunizieren (siehe auch \textit{Pins}).
+	        \item[Pin] Pins sind Kontakte, die zum Beispiel vom Prozessor für die Kommunikation mit der ``Außenwelt''
+	        genutzt werden. Die Pins eines Mikroprozessors können in der Regel mehrere Funktionen übernehmen. Beim
+	        Hochfahren muss dem Prozessor mitgeteilt werden, wie er bestückt ist und wie er deswegen die Pins
+	        behandeln muss\citep[vgl.~Kap.~1.3]{Asche2017}.
+	        \item[Serielle Schnittstelle] Ein serieller Datenfluss bezeichnet das Versenden von Daten in Form von
+	        aufeinanderfolgenden Bits. Das Gegenstück zu seriell ist die parallele Übertragung von Daten, in der über
+	        mehrere Datenströme parallel gesendet wird.
+	        \item[Flash-Speicher] Ein nicht-flüchtiger Speicher, welcher elektronisch gelöscht und programmiert werden
+	        kann.
+	        \item[RTOS] \glsit{glo:rtos} bezeichnet ein Betriebssystem mit
+	        Echtzeitanforderungen. Das heißt, es muss innerhalb eines bestimmten Zeitraums antworten und Daten ohne
+	        Pufferverzögerungen bearbeiten.
+	        Im Embedded\hyp{}Bereich kommen Echtzeitbetriebssysteme oft zum Einsatz, da sie ``im Gegensatz zu anderen
+	        Betriebssystemen dem Entwickler einen hohen Grad der Kontrolle darüber, welche Ereignisse mit welcher
+	        Priorität behandelt werden können[, geben]''\citep[Kap.~3.1]{Asche2017}.
+	        Genaueres wird in Abschnitt \ref{sec:os} erläutert.
+	        \item[Interrupt] Ein Interrupt bezeichnet ein unterbrechendes Ereignis.
+	        Diese spielen vor allem bei Echtzeitsystemen eine große Rolle. Sie signalisieren der Hardware sich sofort
+	        auf ein anderes Ereignis zu konzentrieren. Der Prozessor unterbricht daraufhin alle Aktivitäten und
+	        wendet sich durch einen \textit{Interrupt Handler} dem besagtem Ereignis zu.
+	        ``In vielen Prozessoren genießen Interrupts einen privilegierten Status, indem sie in einer
+              höheren Sicherheitsstufe und möglicherweise in einem anderen Kontext als Applikations-Code ausgeführt
+              werden.''\citep[Kap.~1.5]{Asche2017}
+	        \item[Host] Als Host wird die Instanz bezeichnet, von der das Programm auf die Zielhardware gespielt wird.
+	        Hierbei handelt es sich meistens um den Entwicklungsrechner.
+	        \item[Target] Die Zielhardware wird als Target (also ``Ziel'') bezeichnet.
+	        \item[PCB] \glsit{glo:pcb} ist englisch für Leiterplatte. Ein \glsit{glo:pcb} enthält
+	        mehrere \glsplit{glo:ic} oder andere elektronische Bauteile, die miteinander Verbunden sind.
+	    \end{description}
+	\subsection{Betriebssysteme}
+	\label{sec:os}
+	Wie in Abschnitt \ref{sec:cortex_fam} erwähnt, gibt es für verschiedene \glsit{glo:arm}-Cortex-Prozessorserien unterschiedliche
+	Anwendungsgebiete. Damit stellt sich auch die Frage, welches Betriebssystem am besten geeignet ist und ob
+	überhaupt ein solches benötigt wird.
+
+	Die Aufgabe eines Betriebssystems ist es die Hard- und Software eines Systems zu verwalten. Es stellt eine
+	Abstraktionsebene zwischen System-Hardware und Applikationen dar und ist für die Bereitstellung von verschiedenen
+	Diensten zuständig. Dabei arbeitet das Betriebssystem logisch unterteilte Aufgaben ab. Diese können unabhängig
+	voneinander ausgeführt und, falls nötig, bei Abschluss wieder miteinander synchronisiert werden.
+
+	Bei Embedded-Systemen ist die Frage, ob und welches Betriebssystem benötigt wird, oft mit mehreren Faktoren
+	verbunden. Ein großer Entscheidungspunkt ist die zur Verfügung stehende Hardware. Oft wird bei der Entwicklung
+	von Embedded-Systemen versucht so viel wie möglich an Kosten zu sparen, d.h. die Hardware wird oft so minimal wie
+	möglich gestaltet. Da ein Betriebssystem durch seine Abstraktion und Bereitstellung von verschiedenen Diensten und
+	Programmen großen \glsit{glo:overhead} erzeugt, gestaltet sich die Benutzung eines Betriebssystems bei
+	Embedded-Systemen oft als problematisch.
+	``Wenn also ein Abstraktionslayer zwischen der konkreten Implementation und dem sie benutzenden Code liegt, bedeutet
+	das oft größeren Stack- und CPU-Zeitbedarf allein durch den Aufruf der Abstraktionsfunktion, der bei knapp
+	geschneiderten Plattformen durchaus schmerzhaft sein kann!''\citep[Kap.~2.2]{Asche2017}.
+
+	Prinzipiell lässt sich also die Regel aufstellen, dass eine ``einfache'' und nicht parallel laufende Anwendung auf
+	einem Embedded-System kein Betriebssystem benötigt, da die meisten Dienste des Betriebssystems nicht gebraucht werden
+	und somit unnötigen \glsit{glo:overhead} erzeugen.
+
+	Auch komplexere Anwendungen können vollständig ohne Betriebssystem laufen. Die normalerweise von einem
+	Betriebssystem logisch unterteilten und abgearbeiteten Teilaufgaben werden von der eigens entwickelten Firmware
+	übernommen,
+	``in der Praxis [wird] in diesen Fällen normalerweise die Gliederung in Teilaufgaben von im Hause entwickelten
+	Komponenten wie message pumps [...] übernommen [...]. Diese Komponenten lassen sich bereits als kleine
+	Betriebssysteme bezeichnen''\citep[Kap.~3.2]{Asche2017}.
+
+	Anders ist die Lage bei mobilen Geräten, wie zum Beispiel Smartphones und Tablets. Dieser Anwendungsbereich
+	erfordert viele Funktionen eines Betriebssystems, wie zum Beispiel ein File-System, Speicherverwaltung und Weiteres.
+	Die hier verwendeten leistungsfähigen Prozessoren der Cortex-A-Serie bieten sich deshalb für
+	die Verwendung eines Betriebssystems, beispielsweise Linux, iOS, Android, etc an.
+
+	Für Echtzeitsysteme existieren die oben schon erwähnten \glsplit{glo:rtos}. Diese sind in frei
+	verfügbaren Ausführungen, wie z.B. FreeRTOS, vorhanden oder auch kostenpflichtig verfügbar.
+
+	Ein Echtzeitsystem ist dadurch definiert, dass es genau festgelegte Zeitschranken für Prozesse erfüllen muss, um
+	ernsthafte Konsequenzen (wie zum Beispiel ein Systemausfall) oder Misserfolge zu vermeiden. Als Misserfolg wird
+	jedes Systemverhalten definiert, welches die formale Systemspezifikation nicht erfüllt
+	\citep[vgl.~Kap.~2.2.5]{Brause2017}.
+
+    Zwei Verfahren, die beim dynamischen Prozess-Scheduling für Echtzeitsysteme verwendet werden, sind Polling und
+    Interrupts\footnote{\citep[vgl.~Kap.~2.2.5]{Brause2017}}:
+    \begin{description}
+        \item[Polling] Der Prozessor fragt alle verbundenen Geräte in einer Schleife nacheinander ab, ob ein Ereignis
+        oder neue Daten vorhanden sind. Tritt ein dringendes Ereignis während der Bearbeitung eines anderen Ereignisses
+        auf, scheitert diese Strategie.
+        \item[Interrupt] Der Prozessor befindet sich in einer \textit{Idle Loop} und kann von
+        \glsplit{glo:irq} unterbrochen werden. Dabei arbeitet die \glsit{glo:isr} das
+        unterbrechende Ereignis ab, wobei der entsprechenden \glsit{glo:isr} auch eine Priorität zugewiesen werden kann. In diesem
+        Fall findet zusätzlich ein Prioritätsscheduling statt. Hierbei liegt die Problematik bei einer Anhäufung von
+        Interrupts mit hoher Priorität, was dazu führen kann, dass Interrupts mit geringer Priorität ignoriert oder
+        überschrieben werden.
+    \end{description}
+
+    Für den restlichen Verlauf der Arbeit wird angenommen, dass kein Betriebssystem benötigt wird.
+
+    \subsection{Interrupthandling bei ARM-Cortex-Prozessoren}
+    Interrupts stellen ein Kernkonzept der Firmware-Entwicklung dar. Durch sie kann der geregelte Programmablauf
+    beeinflusst werden. Ein Interrupt kann genutzt werden, um einen Dienst vom Prozessor anzufordern (zum Beispiel von
+    einem Peripheriegerät).
+    Folgender Ablauf ergibt sich bei dem Senden eines Interrupts\footnote{\citep[vgl.~Kap.~7]{Yiu2013}}:
+    \begin{enumerate}
+        \item Es wird ein \glsit{glo:irq} an der Prozessor geschickt
+        \item Der Prozessor suspendiert den aktuellen Task (bei geringerer Priorität)
+        \item Der Prozessor arbeitet den mit dem Interrupt gekoppelten \textit{Interrupt Handler} (also eine Funktion) als
+        \glsit{glo:isr} ab
+        \item Der Prozessor führt nach Abschluss den ursprünglichen Task aus
+    \end{enumerate}
+
+    Verantwortlich für das Verarbeiten der Interrupts ist der \glsit{glo:nvic}, der für die
+    Abarbeitung von Interrupts und Exceptions zuständig ist, wobei in den Architekturen der \glsit{glo:arm}-Cortex-Serien Interrupts
+    als Exceptions gelten. Die verschiedenen \textit{Interrupt Handler} sind in der \glsit{glo:ivt} gelistet,
+    welche am Anfang eines jeden Programms initialisiert und an der korrekten Stelle im Speicher hinterlegt werden muss.
+    Bei den meisten Chip-Architekturen der \glsit{glo:arm}-Cortex-M-Serie bietet diese \glsit{glo:ivt} Platz für 256 Interrupt-Vektoren.
+
+    \begin{table}[h]
+        \centering
+        \caption{Beispiel für eine \glsit{glo:ivt}}
+        \label{tab:itvexample}
+        \begin{tabular}{|c|c|}
+            \hline
+            Interrupt-Nummer    & Speicheradresse des \glsit{glo:isr}       \\ \hline
+            1                   & Interrupt-Service-Routine 1   \\ \hline
+            2                   & Interrupt-Service-Routine 2   \\ \hline
+            3                   & Interrupt-Service-Routine 3   \\ \hline
+            $\vdots$            & $\vdots$                      \\ \hline
+        \end{tabular}
+    \end{table}
+
+    Tabelle \ref{tab:itvexample} zeigt eine beispielhafte \glsit{glo:ivt}. Jeder Eintrag besteht aus einer Interrupt Nummer und
+    einem Funktions-Pointer, der auf den \textit{Interrupt Handler} zeigt.
+
+    Jedem Interrupt kann eine Priorität zugewiesen werden. Dabei können diese zwischen 0 und 255 (8 Bit) liegen.
+    Hierbei ist Priorität 0 die höchste und 255 die geringste. Wie viele programmierbare Prioritäten letztendlich
+    möglich sind, entscheidet der Chip-Hersteller. Eine hohe Anzahl an programmierbaren Prioritäten kann die Komplexität
+    eines \glsit{glo:nvic}s, sowie auch den Stromverbrauch erhöhen und gleichzeitig die Leistung bzw. die Geschwindigkeit der
+    Architektur verringern\citep[vgl.~Kap.~7.4]{Yiu2013}.
+
+    Die ersten 16 Einträge der \glsit{glo:ivt} sind für den Prozessorkern reserviert. Sie besitzen feste negative Prioritäten.
+    Ein Beispiel ist der Vektor 12 bei Adresse \texttt{0x0000\_0030}, der den \textit{Debug Monitor Interrupt Handler} enthält.
+    Dieser wird von Debuggern zum Verwalten von Breakpoints benutzt, kann aber auch durch die Maschinenanweisung
+    \texttt{bkpt} erzwungen werden\citep[vgl.~Kap.~2.8]{Asche2017}.
+    Die restlichen Einträge werden vom Prozessorhersteller definiert.
+
+    Die Stelle, an der sich der gesuchte Interrupt-Vektor im Speicher befindet, lässt sich mit Hilfe der
+    Interrupt-Nummer berechnen. Standardmäßig fängt die \glsit{glo:ivt} bei Adresse 0 (also \texttt{0x0} in hexadezimal) an und die
+    Adresse eines Vektors lässt sich durch $x \cdot 4$ errechnen, wobei $x$ die Interrupt-Nummer ist
+    \citep[vgl.~Kap.~7.5]{Yiu2013}.\\
+    \textbf{Beispiel:} Der erste nicht reservierte Interrupt besitzt die Nummer 16. Somit liegt der Funktions-Pointer
+    für den Interrupt Handler bei der Adresse $(16 \cdot 4)_2 = (64)_2 = (40)_{16}$, also \texttt{0x40}. Je nach
+    Architektur kann diese Rechnung variieren.
+
+	\subsection{Allgemeine Voraussetzungen zur Entwicklung von Embedded\hyp{}Systemen}
+	\label{sec:requirements}
+	Ohne Betriebssystem tun sich allerdings im Hinblick auf die Entwicklung einige Schwierigkeiten auf.
+
+    Abgesehen davon, dass ein Entwickler die Prozessorarchitektur genau kennen muss, stellt sich die Frage, wie denn eine
+    entwickelte Firmware aufgespielt werden und eine Fehlersuche stattfinden kann.
+
+    Das Programm-Image muss an die richtige Startadresse des Speichers geschrieben werden, damit
+    der Prozessor alle im Programm vorkommenden Befehle in korrekter Reihenfolge abarbeiten kann.
+    \\\textbf{Beispiel:} Beim \texttt{ATSAM E70 Q21} lautet diese Adresse \texttt{0x00400000}.
+
+    Besagte Startadresse geht aus der \glsit{glo:ivt} hervor. Das Herunterladen der
+    Firmware in den Speicher kann von Hand implementiert werden, es bieten sich allerdings eine Reihe an Werkzeugen an,
+    welche diese Aufgabe übernehmen.
+
+    Außerdem erfordert die Abwesenheit eines Betriebssystems eine Schnittstelle um die installierte Firmware
+    auf Fehler untersuchen zu können. Hier gibt es verschiedene Möglichkeiten:
+    \begin{itemize}
+        \item Target-seitig ist ein Debug-Interface vorhanden und kann über \glsit{glo:usb} angesprochen werden. Genaueres wird in
+        Abschnitt \ref{sec:cmsisdap} erklärt.
+        \item Externe Debugging-Hardware. Diese Hardware konvertiert Befehle, die über \glsit{glo:usb} gesendet werden,
+        in \acrshortit{glo:jtag}- und \acrshortit{glo:swd}-Befehle. Genaueres hierzu in Abschnitt \ref{sec:jtag} und \ref{sec:swd}.
+        \item Eine weitere Debugging-Technik ist \glsit{glo:rtt}. Hierbei nimmt ein \glsit{glo:rtt}-Modul alle Aktivitäten
+        des Prozessors zur Laufzeit der Programms auf, zum Beispiel Lese- und Schreibzugriffe auf den Speicher. Mit den richtigen
+        Werkzeugen kann dann post mortem eine Analyse des Programms stattfinden. Dies ist besonders bei
+        Echtzeitsystemen von Nutzen\citep[vgl.~S.~3]{Campbell2014}. Genaueres hierzu in Abschnitt \ref{sec:trace}.
+    \end{itemize}
+
+    Die Fehleranalyse bei Embedded-Systemen unterscheidet sich stark von dem für einen Software-Entwickler gewohnten
+    Debug-Prozess. Beispielsweise muss bei Breakpoints zwischen Hard- und Software Breakpoints unterschieden werden und
+    darauf geachtet werden, wie viele Hardware Breakpoints vom Chip unterstützt werden. Wie diese Breakpoints
+    funktionieren und wann man welche Art verwenden kann wird in Abschnitt \ref{sec:debugfeatures} erklärt.
+
+    Doch bevor es zur Fehleranalyse kommt, muss die Firmware erst einmal entwickelt werden. Dazu benötigt man vorerst einen
+    Compiler. Das Programm kann in jeder Programmiersprache geschrieben werden, die einen Compiler für die richtige
+    Chip-Architektur besitzt und Binärdateien erzeugt. Üblicherweise wird hier C bzw. C++ genutzt, andere Sprachen werden
+    wegen ihrer zu hohen Abstraktion oft nicht in Erwägung gezogen. Natürlich besteht auch die Möglichkeit, direkt
+    in Assembler zu programmieren.
+
+    ``Im Vergleich zu C und C++ „höhere“ Programmiersprachen wie Java spielen sich auf einer höheren Abstraktionsebene
+    ab, das heißt sie verstecken bewusst Details wie Speicherverwaltung, Datenorganisation oder Hardware-Ansteuerung vor
+    dem Entwickler. Diese erst einmal nicht schlechte Eigenschaft steht aber im direkten Gegensatz zu den Anforderungen,
+    die an eingebettete Systeme gestellt werden.''\citep[Kap.~1.1]{Asche2017}
+
+    Ein weiterer Grund für die Verwendung von C als Programmiersprache für die Entwicklung eingebetteter Systeme ist die
+    Bereitstellung von C-Header-Dateien und Treiberbibliotheken durch einen Großteil an Chip-Hersteller.
+
+    Für den weiteren Verlauf dieser Arbeit wird angenommen, dass die Firmware in der Sprache C entwickelt wird, da dies
+    zum heutigen Zeitpunkt die relevanteste Sprache im Embedded-Bereich ist.
+
+    Betrachtet man nun die bisher erarbeiteten Voraussetzung zur Entwicklung eines Embedded-Systems, kommt man zu
+    folgender Liste:
+    \begin{itemize}
+        \item Host-PC zum Entwickeln der Software
+        \begin{itemize}
+            \item Cross-Compiler
+            \item \acrshortit{glo:usb}-Verbindung zur Zielhardware
+            \item Software zum Aufspielen der Firmware
+            \item Software zur Fehleranalyse (genaueres hierzu in Abschnitt \ref{sec:gdb})
+        \end{itemize}
+        \item Debugging-Hardware
+        \begin{itemize}
+            \item Debug-Chip auf dem Board mit \acrshort{glo:cmsisdap}-Interface (siehe Abschnitt \ref{sec:cmsisdap}) \textbf{oder}
+            \item Debug-Probe zum umwandeln von \acrshortit{glo:jtag}\hyp{}/\acrshortit{glo:swd}\hyp{}Befehlen (siehe\\Abschnitt \ref{sec:jtag} und \ref{sec:swd})
+        \end{itemize}
+        \item Zielhardware
+        \begin{itemize}
+            \item Das \glsit{glo:datasheet} liefert einen umfangreichen Überblick über den Aufbau und die Funktionalitäten des
+            Prozessors
+        \end{itemize}
+    \end{itemize}
+		\subsubsection{Einrichtung der Entwicklungsumgebung}
+        Die Auswahl der richtigen Werkzeuge für die Entwicklung von Embedded-Systemen ist oft eine herausfordernde
+        Aufgabe. Die Anzahl an verfügbaren Werkzeugen wirkt überwältigend und unübersichtlich.
+        Zunächst ist die Frage zu klären, mit welcher Hardware man arbeiten wird. Viele Chip-Hersteller bieten online
+        einen Assistenten an, der anhand von ausgewählten Kriterien die große Auswahl an verschiedenen Prozessoren auf
+        die für den Nutzer relevanten beschränkt.
+
+        Es besteht auch die Möglichkeit ganze Development Boards zu kaufen, welche zusätzliche Peripherie und
+        zum Beispiel eine Debug-Einheit enthalten.
+
+        Wofür man sich letztlich entscheidet, hängt von den Anforderungen des Projekts ab.
+
+        In der Regel ist es üblich, sich erst einmal für einen Chip-Hersteller zu entscheiden (am besten für ein
+        konkretes Modell) und anschließend die vom Hersteller bereitgestellten Werkzeuge zu nutzen.
+
+        Wie in Abschnitt \ref{sec:requirements} bereits erwähnt benötigt man für die Firmware-Entwicklung auf Seiten des Hosts
+        folgende Komponenten:
+        \begin{description}
+            \item[Cross-Compiler] Der geschriebene Source\hyp{}Code muss spezifisch für die Chip\hyp{}Architektur kompiliert werden.
+            \item[Programmiergerät] Der kompilierte Source-Code in Form einer Binärdatei muss auf den Speicher des
+            Prozessors heruntergeladen werden.
+            \item[Debugger] Bei selbst geschriebener Firmware ist die Fehlersuche im Code so gut wie unausweichlich.
+            Hierbei helfen einem Debug-Funktionalitäten wie Breakpoints, um Fehler im Code zu finden.
+        \end{description}
+
+        Verwendet man unterschiedliche Programme für die oben genannten Prozesse, bezeichnet man die Sammlung dieser
+        Programme als \glsit{glo:toolchain}. Die Komplexität besteht nun darin, herauszufinden welche Werkzeuge mit der
+        Zielhardware kompatibel sind und welche Werkzeuge am besten miteinander funktionieren.
+
+        Atmel bietet beispielsweise ein Visual-Studio-Plugin mit dem Namen \textit{Atmel Studio} an. Genanntes Plugin
+        funktioniert mit vielen von Atmel hergestellten Chips und unterstützt diverse Debugging-Features, wie zum Beispiel
+        \textit{Trace} oder \glsit{glo:cmsisdap}. Auch das Aufspielen von Firmware funktioniert problemlos.
+        Das Plugin erfüllt also alle oben genannten Voraussetzungen für die Entwicklung eines Embedded-Systems auf
+        Seiten des Hosts, sofern das Board entsprechend mit debug-fähiger Hardware ausgestattet ist. Wie diese Hardware
+        aussieht und funktioniert wird im Abschnitt \ref{sec:protocols} erarbeitet.
+
+        Da Atmel Studio ein Plugin der von Microsoft entwickelten IDE \textit{Visual Studio} ist, bindet es den
+        Entwickler an die Windows-Plattform. Für Entwickler auf anderen Systemen, wie zum Beispiel Linux oder Mac ist
+        dies ohne Virtualisierung keine Option. Des weiteren kommt mit der benötigten Installation von Visual Studio ein
+        großer \glsit{glo:overhead}, da dieses Programm sehr umfassend ist und somit die Entwicklungsumgebung deutlich verlangsamt.
+
+        Eine Open-Source-Lösung zum Programmieren und Debuggen von Firmware bietet das Programm \glsit{glo:openocd}
+        \footnote{Das Projekt wurde 2005 im Rahmen einer Masterarbeit von Dominic Rath
+        angestoßen und seitdem von diversen Mitwirkenden weiterentwickelt}.
+        Es unterstützt sowohl Windows als auch Unix-ähnliche
+        Systeme. Lediglich der richtige Cross-Compiler fehlt, und muss separat vom Entwickler betrieben werden.
+
+        Für die Produktion bietet sich das kostenpflichtige Toolset von Keil an, welches eine IDE mit
+        Debugging-Unterstützung enthält. Keil ist eine der wenigen Lösungen, die eine sehr große Menge an
+        Chip-Architekturen von verschiedenen Herstellern unterstützt.
+
+	\subsection{Negative Aspekte des Enticklungsprozesses von Embedded\hyp{}Systemen}
+	\label{sec:probleme}
+	Durch eine genauere Betrachtung des Entwicklungsprozesses zeichnen sich mehrere Hürden und Probleme ab, die es zu
+	bewältigen gilt:
+	\begin{itemize}
+	    \item Für Neueinsteiger in den Bereich der Embedded-Systeme, seien es bereits ausgebildete Software-Entwickler
+	    oder Anfänger, ist die Entwicklung mit einer steilen Lernkurve verbunden. Teilweise verantwortlich
+	    dafür ist die große Anzahl an unterschiedlicher Hardware und verschiedene Entwicklungsumstände (zum Beispiel
+	    auf welchem Host-System entwickelt wird).
+	    \item Fehlende oder nicht eingehaltene Standards zwischen Chip-Herstellern sind dafür verantwortlich, dass
+	    Applikations-Code schwieriger zu portieren ist. Das heißt auch, dass bei einem Wechsel der Hardware ein neues
+	    Interface studiert und in den bestehenden Applikations-Code integriert werden muss.
+	    \item Der vorherige Punkt hat zu Folge, dass Entwickler oft an einen Hersteller gebunden sind, da die
+	    \glsit{glo:hal} und somit auch die Treiber herstellerspezifisch sind. Ein Wechsel der
+	    Hardware ist also mit größeren Umständen verbunden.
+	    \item Auch besitzt fast jeder Hersteller seine eigene Sammlung an Enwicklungswerkzeugen, zusätzlich zu anderer
+	    Software, die von Drittanbietern angeboten wird. Bestimmte Entwicklungswerkzeuge binden den Entwickler an
+	    Plattformen, wohingegen frei verfügbare Software oft unübersichtlich gestaltet ist und somit vor allem für
+	    Anfänger eine große Hürde darstellt.
+	    \item Bestehende Abstraktionen auf einer höheren Ebene, wie zum Beispiel das Wiring-Projekt (unterstützt nur
+	    AVR Prozessoren) \footnote{\href{http://www.wiring.org.co/}{Offizielle Seite \texttt{wiring.org.co}}}, binden den Entwickler an
+	    bestimmte Hardware und schränken die Möglichkeiten der Erweiterung und Leistung von Hardware ein. Bei der
+	    Wiring-Plattform ist dies dem Ziel geschuldet, möglichst einfaches und sicheres Hardware-Prototyping für unerfahrene
+	    Entwickler anzubieten. Die Menge an Funktionalitäten um potenzielle Fehlerquellen abzufangen resultiert in
+	    starken Leistungseinbußen.\\
+	    \textbf{Beispiel:} Arduino-Shields sind Hardware-Erweiterungen, die auf ein Arduino-\glsit{glo:pcb} gebaut werden können.
+	    Dabei müssen die Shields über unterschiedliche Pins angesteuert werden. Dies beschränkt die möglichen
+	    Erweiterungen.
+	    \item Es herrscht ein Mangel an effizienten und modernen Entwicklungsumgebungen, die ein Software-Enwickler
+	    wahrscheinlich gewohnt ist, mit Unterstützung für Embedded-Systeme. Bereits erwähnte \glsplit{glo:ide}, wie zum Beispiel
+	    Keil oder Atmel Studio sind entweder an eine Plattform und einen Hersteller gebunden oder nicht frei verfügbar.
+	\end{itemize}
+
+    Die aufgeführten Punkte stellen gleichzeitig die Anforderungen an eine Software-Plattform zur Vereinfachung der
+    Entwicklung im Embedded-Bereich und werden in Abschnitt \ref{sec:demands} formuliert.

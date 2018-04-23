@@ -1,0 +1,490 @@
+\section{Gesamtlösung}
+\label{sec:overallsolution}
+    Dieser Teil der Arbeit beschäftigt sich mit einem konkreten Lösungsansatz zur Vereinfachung der Entwicklung von
+    Embedded-Systemen. Dabei skizziert der erste Teil Grundprinzipien und das Gesamtkonzept der Software-Architektur,
+    dessen Implementierung nicht im Rahmen dieser Arbeit liegt. Der zweite Teil stellt das Software-Projekt für ein
+    \glsit{glo:ide}-Plugin vor, welches im Rahmen der Arbeit implementiert wird, und dokumentiert den Entwicklungsprozess.
+    \subsection{Gesamtlösung}
+
+    Um den Entwicklungsprozess einer Hardware-Applikation zu vereinfachen, sind die in Abschnitt
+    \ref{sec:abstractionoverview} aufgeführten Problematiken bezüglich der Hardware-Abstraktionen und der daraus
+    entstehende umständliche Entwicklungsprozess zu beachten.
+
+    Zugrunde liegt ein Konzept für eine Plattform zur Hardware-Entwicklung, welches aus zwei grundlegenden
+    Komponenten besteht.
+
+    Die erste Komponente ist eine modulare Hardware basierend auf dem Cortex-M7-Mikrocontroller. Diese wird in der
+    Ausarbeitung nicht weiter beschrieben, da ein Prototyp für die Hardware noch nicht existiert und die Beschreibung den
+    Rahmen der Arbeit sprengen würde.
+
+    Die zweite Komponente ist eine Software-seitige Lösung zur Programmierung der Hardware-Applikation. Sie besteht aus
+    mehreren Subkomponenten. Abbildung \ref{fig:softwarecomp} zeigt das Gesamtbild des Architekturkonzepts.
+    Das primäre Ziel der Software-Komponenten ist es, eine einheitliche und einfach zu erweiternde Sammlung von
+    Schnittstellen für Peripherie auf dem \glsit{glo:pcb} zu schaffen.
+
+    Darauf aufbauend soll ein \glsit{glo:ui} (in weiteren Ausführungen \textit{Designer\hyp{}UI} genannt) geschaffen werden,
+    mit der die Peripherie graphisch konfiguriert werden kann.
+    Anschließend soll es möglich sein, die entwickelte Firmware (ob nun mit Designer-\glsit{glo:ui} oder selber
+    programmiert) auf einem Host-System unabhängig von Plattform und Entwicklungsumgebung auf den Mikrocontroller zu
+    spielen und auf Fehler zu untersuchen.
+
+    \begin{figure}[h]
+        \centering
+        \caption{Konzipiertes Gesamtbild der Systemarchitektur}
+        \source{eigene Zeichnung}
+        \label{fig:softwarecomp}
+        \includegraphics[scale=1.3]{../Graphiken/arch}
+    \end{figure}
+
+    \subsection{Anforderungen}
+        \label{sec:demands}
+        Die Anforderungen an eine Lösung zur Vereinfachung der Entwicklung bei Embedded\hyp{}Systemen ergeben sich aus den
+        in Abschnitt \ref{sec:probleme} aufgeführten Probleme im Entwicklungsprozess.
+        Die zu erfüllenden Anforderungen würden somit lauten:
+        \begin{itemize}
+            \item Ein Entwickler sollte nicht mehr an die vom Hersteller zur Verfügung gestellten Treiber und
+            Entwicklungswerkzeuge gebunden sein.
+            \item Ein unerfahrener Hardware-Entwickler sollte ohne großen Aufwand in der Lage sein, mit Hilfe der Software
+            eine Applikation zu entwickeln und die auf dem \glsit{glo:pcb} vorhandene Peripherie miteinbeziehen.
+            Dies heißt nicht, dass sich ein Entwickler nicht mit der Thematik auseinander setzen muss. Lediglich der
+            durch Hardware-Hersteller erzeugte Überfluss an Schnittstellen, Konfigurationsmöglichkeiten und Treiberimplementierungen
+            soll durch eine klar definierte, einheitliche, modulare und überschaubare Software mit integriertem
+            \glsit{glo:api} ersetzt werden.
+            \item Durch eine Vereinheitlichung soll die steile Lernkurve bei Embedded-Systemen
+            abgeflacht werden und der Fokus des Entwicklers auf die eigentliche Entwicklung der Applikation gelenkt werden.
+            \item Der Auswahlprozess soll durch die Bereitstellung eines einheitlichen Werkzeuges vereinfacht werden.
+            Eine frei verfügbare Plattform, welche den Entwickler so weit wie möglich uneingeschränkt lässt, soll dem
+            Entwickler wie im vorherigen Punkt umständliche Konfigurations- und Initialisierungsarbeit abnehmen.
+            \item Alle vorherigen Punkte sollen ohne das Einbußen der von der Hardware erbrachten Leistung realisiert
+            werden, um die Entwicklung von komplexen Applikationen für Embedded-Systeme zu ermöglichen.
+        \end{itemize}
+
+    \subsection{Herstellerunabhängigkeit}
+    Abbildung \ref{fig:softwarecomp} zeigt das in Abschnitt \ref{sec:layers} und \ref{sec:abstractionoverview}
+    aufgeführte Schichtenmodell der Entwicklung von Embedded-Systemen mit einer zusätzlichen
+    \textit{Vendor-Independent-\glsit{glo:api}}-Schicht. Diese soll eine Schnittstelle zu den herstellerspezifischen
+    \glsplit{glo:hal} darstellen und einen einheitlichen Zugriff auf \glsit{glo:rtos}-Betriebssysteme ermöglichen
+    (hierfür kann auch \glsit{glo:cmsis}-\glsit{glo:rtos} in betracht gezogen werden).
+
+    \glsit{glo:cmsis}-Driver befindet sich in der Grafik auf der selben Ebene wie die herstellerspezifischen \glsplit{glo:hal}. Grund dafür ist,
+    dass nicht alle Chip-Hersteller das \glsit{glo:cmsis}-Driver-Interface unterstützen. Unterstützt ein Hersteller das
+    \glsit{glo:cmsis}-Driver-Interface, so ist das Interface im Software-Framework, zusammen mit den herstellerspezifischen
+    Treibern und \glsplit{glo:hal}, mitintegriert.
+
+    Eine Software, welche von der \glsit{glo:hal} und den entsprechenden Treibern Gebrauch macht,
+    muss also in mehreren Szenarien, in denen verschiedene Abstraktionsschichten verfügbar sind und gebraucht werden,
+    funktionieren.
+
+
+    \begin{figure}
+        \centering
+        \caption{Verwendete CMSIS-Abstraktionsschichten in einer Beispiel\hyp{}Applikation}
+        \source{\href{http://www.keil.com/appnotes/files/apnt_268.pdf}{Skript zum Vortrag von Reinhard Keil}, Zugriff: 03.08.17}
+        \label{fig:armcmsisexampleapp}
+        \includegraphics[scale=0.5]{../Graphiken/STM_DEV_LAYERS_ARM}
+    \end{figure}
+
+    Abbildung \ref{fig:armcmsisexampleapp} zeigt ein von \glsit{glo:arm} vorgestelltes Beispiel für eine Applikation, in
+    dem die Verwendung der \glsit{glo:cmsis}-Abstraktionsschichten verdeutlicht wird.
+    Um vollständige Herstellerunabhängigkeit zu erlangen, muss alles unter dem \textit{Board-Support-Layer} abstrahiert werden.
+
+    Um Implementierungsarbeit zu sparen, sollte, wenn möglich, das \glsit{glo:cmsis}-Driver-Interface genutzt werden. Da wie eben
+    schon erwähnt nicht alle Hersteller \glsit{glo:cmsis}-Driver unterstützen und das Interface an sich nicht umfangreich genug für
+    manche Applikationen ist, muss die Abstraktion auch direkt mit dem Hersteller-HAL funktionieren.
+
+    Die Software soll noch einen Schritt weiter gehen und dem Entwickler die in Abschnitt \ref{sec:abstractionoverview}
+    angesprochene Designer-\glsit{glo:ui} zur Verfügung stellen.
+
+    \subsection{Ansatz der modellbasierten Entwicklung}
+    \label{sec:modelbaseddev}
+    Das Designer-\glsit{glo:ui} soll es Entwicklern ermöglichen ein funktionales Embedded-System zu entwerfen.
+    Es muss ein Überblick über die Hardware geschaffen werden, wobei sämtliche Peripherie konfigurierbar und
+    intrinsische so wie externe Kommunikation steuerbar sein muss. Es soll also möglich sein, die Hardware
+    über graphische Werkzeuge zu programmieren.
+
+    Folgender Abschnitt gibt einen kurzen Überblick über den Ansatz der modellbasierten Entwicklung und leitet daraus
+    Anforderungen an das Designer-\glsit{glo:ui} ab.
+
+    Modellbasierte Entwicklung bezeichnet einen Prozess der Software-Entwicklung. Dieser besteht aus der Erzeugung einer
+    lauffähigen Software aus modellierten Komponenten.
+    ``Dabei wird die Software nicht mehr textuell mit Programmiersprachen, wie beispielsweise C, programmiert, sondern
+    mit graphischen Modellen auf einer höheren Abstraktionsebene spezifiziert und schrittweise über verschiedene
+    Entwicklungsphasen von den Anforderungen über den Entwurf bis zur Implementierung verfeinert.''\citep[vgl.~S.~165]{Berns2010}
+
+    In der Praxis setzt sich die modellbasierte Entwicklung aus \acrshortit{glo:uml}-Diagrammen in
+    Kombination mit der Verwendung von \acrshortit{glo:case}-Werkzeugen zusammen.
+    \acrshortit{glo:case}-Werkzeuge generieren ein Code-Gerüst aus \acrshortit{glo:uml}-Diagrammen, welches vom Entwickler für die weiterführende
+    Entwicklung genutzt werden kann.
+
+    Das Ziel des Designer-\glsit{glo:ui} ist jedoch nicht die reine Modellierung durch \acrshortit{glo:uml}-Diagramme, sondern viel mehr einen Weg
+    zu finden, bestehende Funktionalitäten und Peripherie miteinander zu vernetzen. Dies soll möglichst übersichtlich
+    und intuitiv für Entwickler geschehen.
+
+    Eine abstrakte Definition von Prozess- und Produktmodellierung beschreibt viel mehr ein Paradigma der
+    modellbasierten Entwicklung:
+    \begin{description}
+        \item[Prozess] Ein Prozess erlaubt die Beschreibung von \textit{Aktivitäten}. Aktivitäten sind
+        \textit{wiederholbar}, \textit{umkehrbar} und \textit{nachverfolgbar}. Sie schließen unter anderem Aufgaben
+        auf unterster Ebene wie zum Beispiel \textit{Refactoring} und \textit{Umbenennung}, so wie auch Aufgaben auf höheren
+        Ebenen, wie zum Beispiel den Einsatz von abstrakten Controller-Funktionalitäten der Zielplattform, ein.
+        Eine Aktivität ist prinzipiell eine Aufgabe, welche im Rahmen eines Entwicklungsprozesses geschieht, wie zum Beispiel
+        die \textit{Definition eines System-Interfaces} oder die \textit{Generierung von Test-Szenarien}
+        \citep[vgl.~Kap.~1~und~2]{Schaetz2002}.
+        \item[Produkt] Ein Produkt modelliert Artefakte und deren Relationen zueinander. Das heißt für den Bereich der
+        Embedded\hyp{}Systeme, dass alle für die Produktion relevanten \textit{Komponenten}, \textit{Zustände},
+        \textit{Nachrichten} und deren Beziehungen zueinander in die Produktmodellierung einfließen
+        \citep[vgl.~Kap.~1~und~2]{Schaetz2002}.
+    \end{description}
+
+    Betrachtet man die Programmierung, in Bezug auf formale Sprachen, für ein Embedded-System schichtenweise, kommt man
+    auf drei grobe Bereiche:
+    \begin{enumerate}
+        \item Programmierung der Hardware mit Assembler-Code
+        \item Erste Abstraktion durch Programmiersprachen wie zum Beispiel C
+        \item modellbasierte Entwicklung auf graphischer Ebene
+    \end{enumerate}
+
+    Es stellt sich die Frage, welche Komponenten auf welche Weise modelliert werden sollen. Dabei muss die Software die
+    in Abschnitt \ref{sec:demands} gestellten Anforderungen reflektieren.
+    ``Allerdings deckt keines der heute verfügbaren Werkzeuge den gesamten Entwicklungslebenszyklus adäquat ab. Zur
+    Modellierung einer Architektur ist es beispielsweise notwendig mehrere Sichten zu definieren, die jeweils
+    unterschiedliche Aspekte des Systems repräsentieren''\citep[]{Trapp11}.
+
+    Letztendlich sind folgende Aspekte bei einer graphischen Modellierung zu berücksichtigen:
+    \begin{itemize}
+        \item Hardware-Abstraktion - Definition der Hardware und deren Attribute so wie zur Verfügung stehende
+        Funktionalitäten - \textbf{Schnittstellen/Treiber}\\
+        \textbf{Beispiel:} LED kann an- und ausgeschaltet werden
+        \item Verteilung von Aufgaben auf verschiedene Hardware-Komponenten\\
+        \textbf{Beispiel:} Schalte LED an
+        \item Kommunikation zwischen Hardware-Komponenten\\
+        \textbf{Beispiel:} Sensor übermittelt Daten an ein Ethernet-Modul
+    \end{itemize}
+
+    \subsection{Konzept für eine Integration von OpenOCD in eine IDE}
+    Der Schwerpunkt dieser Arbeit liegt auf der für die Hardware-Entwicklung genutzten Software. Im Vordergrund stehen
+    dabei das Aufspielen von Firmware auf die Zielhardware und die Fehlersuche bei bereits aufgespielter Firmware über
+    ein Host\hyp{}System.
+
+    Der Entwickler muss sich also seine eigene \glsit{glo:toolchain} zusammenstellen, was wie in Abschnitt
+    \ref{sec:demands} erläutert durch die Vielzahl an herstellerspezifischen Tools und Komplexität der einzelnen
+    Werkzeuge oft ein Problem für Neueinsteiger darstellt.
+
+    \glsplit{glo:ide} fassen die benötigten Werkzeuge zusammen und ermöglichen den Zugriff auf
+    diese in einer gemeinsamen Umgebung (ohne sogenannte Medienbrüche).
+
+    Bisher vorhandene Lösungen, wie zum Beispiel \textit{Atmel Studio} oder \textit{Keil IDE} binden den Entwickler an
+    eine Plattform und lassen wenig Erweiterbarkeit zu oder sind mit hohen Kosten verbunden. Hinzu kommt, dass sie oft
+    herstellerspezifisch (Atmel, STM, etc.) sind.
+
+    Es wird also ein Werkzeug benötigt, welches es einem Hardware-Entwickler ermöglicht innerhalb einer integrierten
+    Entwicklungsumgebung eine Applikation für Embedded-Systeme zu entwickeln, ohne sich Gedanken über die benötigten
+    Werkzeuge für die Hardware machen zu müssen.
+
+    Das Plugin soll für die \glsplit{glo:ide} der IntelliJ-Plattform
+    \footnote{\href{https://www.jetbrains.com/}{Jetbrains-Seite}} entwickelt werden. Die Entscheidungsgründe für die
+    Auswahl lauten:
+    \begin{itemize}
+        \item Plattformunabhängig
+        \item Frei verfügbar als \textit{Community}-Version
+        \item Verschiedene \glsplit{glo:ide} für verschiedene Sprachen verfügbar. Das Plugin funktioniert
+        (außer sprachspezifische Funktionalitäten) für jede \glsit{glo:ide} der IntelliJ-Plattform
+        \item Unterstützt Remote-Debugging (\glsit{glo:rsp})
+    \end{itemize}
+
+    Da C die am weitesten verbreitete Sprache in der Entwicklung von Embedded-Systemen ist, liegt der Fokus des Plugins
+    jedoch auf der Entwicklungsumgebung CLion.
+    In zukünftiger Entwicklung des Plugins wird ein Werkzeug konzipiert, mit dem es möglich ist, entwickelte Firmware auf
+    den Flash-Speicher eines Prozessors herunterzuladen und auf Fehler zu untersuchen. Da dies mit einem größeren
+    Zeitaufwand verbunden ist, wird zunächst das bereits angesprochene \glsit{glo:openocd}, welches für Windows, Linux
+    und OSX verfügbar ist, genutzt um ein \glsit{glo:proofofconcept} zu erstellen.
+        \subsubsection{Anforderungen}
+        \label{sec:pluginrequirements}
+        Das Plugin verfolgt das Ziel, dem Entwickler eine Entwicklungsplattform zu liefern mit der Firmware-Programme
+        geschrieben, kompiliert, aufgespielt und eine Fehleranalyse durchgeführt werden kann. Es soll also der komplette
+        Entwicklungszyklus für die Programmierung von Embedded-Systemen in einer geschlossenen Umgebung abgedeckt
+        werden.
+
+        Ein fortgeschrittener Editor zum Schreiben von Firmware wird dabei von der CLion-Entwicklungsumgebung
+        bereitgestellt.
+
+        Der Compiler kann in der Entwicklungsumgebung ausgewählt und konfiguriert werden. Hierzu ist ein Build-System
+        namens \glsit{glo:cmake} in die \glsit{glo:ide} integriert, mit dem der zu verwendende Compiler bestimmt werden kann. Compiler können
+        nach persönlichen Präferenzen und bedingt durch das Host-Betriebssystem ausgewählt werden. Hier ist zu beachten,
+        dass der Compiler die richtige Zielarchitektur unterstützen muss.
+
+        \glsit{glo:openocd} stellt eine Funktion zum Aufpielen von Firmware-Programmen auf einen Prozessor bereit. Hierzu müssen
+        bestimmte Angaben, wie zum Beispiel die Startadresse im Flash-Speicher an die das Programm-Image geschrieben
+        werden soll, gemacht werden. Diese müssen über ein \glsit{glo:ui} in der \glsit{glo:ide} konfigurierbar sein.
+
+        Der letzte Punkt des Entwicklungszyklus, das Debugging, wird von einem lokalen \glsit{glo:gdb}-Server ermöglicht, welcher
+        vom \glsit{glo:openocd} gestartet wird. Es muss dem Entwickler ermöglicht werden den lokalen Port für den \glsit{glo:gdb}-Server
+        anzugeben. Da CLion Remote-Debugging unterstützt, muss anschließend eine \textit{Debugging-Configuration}
+        mit der Adresse, unter dem der \glsit{glo:gdb}-Server erreichbar ist, erstellt werden.
+
+        Schließlich sollte ein Nutzer außerdem über ein \glsit{glo:ui} in der Lage sein das Verhalten des Plugins zu
+        konfigurieren. Hierzu gehört die Angabe des Ports, unter dem der \glsit{glo:gdb}-Server erreichbar ist, die für das
+        \glsit{glo:openocd} relevante Angabe des Namens für die entsprechende Board-Konfiguration und die Startadresse für das
+        Ablegen des Firmware-Programms.
+
+        \subsubsection{Das IntelliJ-SDK}
+        \label{sec:sdk}
+        Um ein Plugin für eine \glsit{glo:ide} der IntelliJ-Familie zu entwickeln, muss das in Java geschriebene
+        \glsit{glo:sdk} von IntelliJ genutzt werden.
+
+        Aktionen, wie zum Beispiel das Öffnen einer Datei oder das Kompilieren eines Programms, werden durch die
+        Klasse \texttt{AnAction} modelliert. Beim Auswählen eines Menüpunktes oder Toolbar-Buttons werden sie
+        ausgeführt. Aktionen können durch das Ableiten der \texttt{AnAction}-Klasse erstellt
+        werden und zu Gruppen hinzugefügt werden. Aus diesen Gruppen lassen sich eigene (Sub-)Menüs und Werkzeugleisten
+        für die hinzugefügten Aktionen erstellen.
+
+        Konfigurationen zum Ausführen und Debuggen eines Programms werden in IntelliJ mit \textit{Run Configurations}
+        modelliert. Da CLion Remote-Debugging über \glsit{glo:gdb} unterstützt, enthält es dafür auch eine vorgefertigte
+        \textit{Run Configuration}. Hier können Adresse und Port, unter denen der \glsit{glo:gdb}-Server erreichbar ist, angegeben
+        werden.
+
+        In Anbetracht dieser beiden Modellierungen ergeben sich folgende Ideen für eine Programmstruktur.
+
+        Es lassen sich zunächst Aktionen definieren:
+        \begin{itemize}
+            \item Der \glsit{glo:openocd}-Daemon muss gestartet und gestoppt werden können
+            \item Ein Programm muss für die korrekte Chip-Architektur kompiliert werden
+            \item Die kompilierte Programmdatei muss auf den Chip-Speicher geschrieben werden
+        \end{itemize}
+
+        Für das Remote-Debugging kann eine \textit{Run Configuration} erstellt werden. Diese muss die korrekten
+        Parameter für den \glsit{glo:gdb}-Server enthalten.
+
+        \subsubsection{Architektur}
+
+        Aus den in Abschnitt \ref{sec:pluginrequirements} und \ref{sec:sdk} erarbeiteten Anforderungen und Ansätze
+        ergibt sich ein Konzept für die benötigten Komponenten und eine grobe Software-Architektur des Plugins.
+
+        \begin{figure}[h]
+            \centering
+            \caption{Komponenten und Kommunikationswege}
+            \label{fig:commplugin}
+            \includegraphics[scale=0.5]{../Graphiken/plugin_arch_v5}
+        \end{figure}
+
+        Abbildung \ref{fig:commplugin} zeigt den allgemeinen Entwicklungs- und Kommunikationsprozess der beteiligten
+        Instanzen.
+
+        Für die Entwicklung von Embedded-Systemen muss die \glsit{glo:ide} zwei Arten von Frontends besitzen, also (in diesem
+        Fall graphische) User-Interfaces, mit denen der Nutzer Funktionalitäten der dahinterliegenden Software benutzen
+        kann.
+
+        CLion unterstützt bestimmte Debug-Funktionalitäten, wie zum Beispiel das Setzen von Breakpoints oder
+        schrittweise Ausführen von Anweisungen, die mit Hilfe des \glsit{glo:gdb}s realisiert werden. Zusätzlich sind
+        hierfür graphische \glsplit{glo:ui} in die \glsit{glo:ide} integriert. Da Remote-Debugging mit dem \glsit{glo:gdb}
+        \glsit{glo:rsp} von der Entwicklungsumgebung unterstützt wird, ist das benötigte Frontend für den \glsit{glo:gdb}-Server bereits
+        vorhanden. Die \glsit{glo:ide} sendet also vom Nutzer initiierte Debug-Befehle, wandelt sie in das entsprechende
+        \glsit{glo:rsp}-Paket um und sendet diese an einen \glsit{glo:gdb}-Server weiter.
+
+        Das zweite Frontend stellt eine direkte Integration des \glsit{glo:openocd}-Werkzeuges dar. Der Nutzer bzw. das Plugin
+        kann Funktionalitäten der lokalen Installation von \glsit{glo:openocd} nutzen ohne die \glsit{glo:ide} zu verlassen.
+
+        Das \glsit{glo:openocd}-Programm besteht aus einem \glsit{glo:cli}, welches die Befehle weiter an den \glsit{glo:openocd}-Daemon
+        sendet. Beim Start des \glsit{glo:openocd}-Daemons, wird gleichzeitig der lokale \glsit{glo:gdb}-Server gestartet.
+
+        Der \glsit{glo:gdb}-Server empfängt vom \glsit{glo:gdb}\hyp{}Frontend der \glsit{glo:ide} gesendete Debugging\hyp{}Befehle und gibt diese weiter an den
+        \glsit{glo:openocd}\hyp{}Daemon. Dieser wandelt die \glsit{glo:gdb}-Befehle (\glsit{glo:rsp}) in die entsprechenden \acrshortit{glo:jtag}-Befehle um und überträgt
+        diese über \glsit{glo:usb} mit Hilfe des \glsit{glo:cmsisdap}-Protokolls an die Debug-Einheit der Target\hyp{}Hardware.
+
+        Das \glsit{glo:openocd}-Frontend muss also drei grundlegende Aufgaben erfüllen
+        \begin{enumerate}
+            \item Der \glsit{glo:openocd}-Daemon muss gestartet werden
+            \item Der \glsit{glo:openocd}-Daemon muss mit den gewünschten Einstellungen konfiguriert werden
+            \item Das Programm-Image muss über \glsit{glo:openocd} und somit \glsit{glo:cmsisdap} auf das Board heruntergeladen werden
+        \end{enumerate}
+
+        Um den kompletten Entwicklungszyklus abzudecken fehlt die Kompilierung des Programms. Das von CLion
+        unterstützte Build-System \glsit{glo:cmake} muss so konfiguriert werden, dass es
+        \begin{enumerate}
+            \item den richtigen Compiler zum Kompilieren für \glsit{glo:arm} Architekturen nutzt
+            \item das Image an eine vorgesehene Stelle schreibt, auf die das \glsit{glo:openocd}-Frontend Zugriff hat
+        \end{enumerate}
+
+        Schließlich sind Besonderheiten des Host-Systems zu beachten. Es muss sichergestellt werden, dass die
+        benötigte Software installiert ist (Cross-Compiler für \glsit{glo:arm}-Architekturen und \glsit{glo:openocd}).
+        Da das Plugin so ausgelegt ist, dass es native Aufrufe des \glsit{glo:openocd} Programms ausführt, muss für
+        Windows-basierte Betriebssysteme eine andere Logik entwickelt werden als für Unix-basierte Betriebssysteme.
+
+        Es ergibt sich zunächst eine konzeptionelle Einteilung in folgende Software-Pakete für das Plugin:
+        \begin{description}
+            \item[\texttt{actions}] Das \texttt{actions}-Paket enthält alle Aktionen des \glsit{glo:openocd}-Frontends.
+            Konzipierte Aktionen sind das Starten des \glsit{glo:openocd}-Daemons mit den richtigen Einstellungen und das
+            Aufspielen des Programm-Images.
+            \item[\texttt{extensions}] Als \texttt{extensions} werden alle Programmteile gesehen, die eine aktive
+            Erweiterung der bereits vorhandenen \glsit{glo:ide}-Elemente sind. Ein Beispiel hierfür ist eine Initialisierungslogik,
+            die beim Öffnen eines Projektes ausgeführt wird. Die Formulierung ist hierbei wie im vorherigen Punkt von
+            dem IntelliJ-SDK übernommen.
+            \item[\texttt{ui}] Alle graphischen Komponenten befinden sich im \texttt{ui}-Paket. Hierzu gehört im
+            wesentlichen eine Toolbar, welche alle Einstellungsmöglichkeiten für das \glsit{glo:openocd} enthalten soll.
+            \item[\texttt{util}] Das \texttt{util}-Paket enthält alle sonstigen Hilfsklassen, wie zum Beispiel eine
+            Klasse mit Methoden zum Ausführen nativer Aufrufe.
+        \end{description}
+
+        Als Letztes stellt sich noch die Frage, welcher Compiler zum Kompilieren des Firmware-Programms genutzt
+        wird. Verwendet werden soll der \glsit{glo:gcc}, da dieser die \glsit{glo:arm}-Architektur als Zielsystem unterstützt und
+        Installationsdateien für OSX, Linux und Windows enthält.
+
+        Das benötigte Paket trägt den Namen \texttt{arm-none-eabi-gcc} und enthält ein \glsit{glo:gcc}-Compiler für die \glsit{glo:arm}-Architektur.
+
+    \subsection{Entwicklung}
+        Die Entwicklung lässt sich in die drei Bereiche \textit{Vorbereitung und Einrichtung der Toolchain},
+        \textit{Integration von \glsit{glo:openocd} in die \glsit{glo:ide}} und \textit{Erstellen eines User-Interfaces} unterteilen.
+        \subsubsection{Compiler und CMake}
+        Das Einrichten eines Cross-Compilers mit \glsit{glo:cmake} in CLion ist eine nicht-triviale Aufgabe. Im Folgenden sind
+        die Schritte aufgelistet, die notwendig sind um ein C-Programm über CLion für die \glsit{glo:arm}-Architektur zu
+        kompilieren.
+        \begin{enumerate}
+            \item Die voreingestellte \glsit{glo:toolchain} muss durch eine neue auf \glsit{glo:arm}-Architekturen ausgelegte \glsit{glo:toolchain}
+            ersetzt werden. Hierfür wird eine neue \glsit{glo:cmake}-Datei mit einem beliebigen Namen (in dem Testdurchlauf
+            \texttt{cc\_test.cmake} genannt) erstellt, dessen Inhalt in Listing \ref{cccmakeconf} angegeben ist.
+            \begin{lstlisting}[
+                language=CMake,
+                caption=Verkürzte Version der CMake-Konfigurationsdatei für die Cross-Compiler-Toolchain,
+                label=cccmakeconf
+            ]
+include(CMakeForceCompiler)
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR cortex-m7)
+
+find_program(ARM_CC arm-none-eabi-gcc
+        ${TOOLCHAIN_DIR}/bin
+        )
+find_program(ARM_CXX arm-none-eabi-g++
+        ${TOOLCHAIN_DIR}/bin
+        )
+find_program(ARM_OBJCOPY arm-none-eabi-objcopy
+        ${TOOLCHAIN_DIR}/bin
+        )
+find_program(ARM_SIZE_TOOL arm-none-eabi-size
+        ${TOOLCHAIN_DIR}/bin)
+
+# specify the cross compiler
+CMAKE_FORCE_C_COMPILER(${ARM_CC} GNU)
+CMAKE_FORCE_CXX_COMPILER(${ARM_CXX} GNU)
+            \end{lstlisting}
+            Die erste Anweisung schließt das CMakeForceCompiler-Modul von \glsit{glo:cmake} ein, welches bestimmte Makros für die
+            Benutzung von Cross-Compiling-\glsplit{glo:toolchain} definiert\citep[vgl.~module/CMakeForceCompiler]{CMAKEDOC}.
+
+            Mit \texttt{find\_program()} wird nach den für die \glsit{glo:toolchain} relevanten Programmen gesucht und
+            in die Variablen geschrieben, somit ist eine Überprüfung mitintegriert. Die Compiler können mit
+            \texttt{CMAKE\_FORCE\_C\_COMPILER} und \texttt{CMAKE\_FORCE\_CXX\_COMPILER} gesetzt werden. Die Variable
+            \texttt{\$\{TOOLCHAIN\_DIR\}} zeigt auf den Pfad zum Ordner, welcher die benötigten Compiler beinhaltet.
+            \item Als nächstes müssen die \glsit{glo:toolchain}-Einstellungen von \glsit{glo:cmake} übernommen werden. Dafür müssen unter
+            \texttt{Settings} $\rightarrow$ \texttt{Build, Execution, Deployment} $\rightarrow$ \texttt{CMake}
+             $\rightarrow$ \texttt{CMake options} die beiden \glsit{glo:cmake}-Optionen
+            \begin{Verbatim}[frame=single]
+-DTOOLCHAIN_DIR:PATH=/usr/bin/
+-DCMAKE_TOOLCHAIN_FILE=cc_test.cmake
+            \end{Verbatim}
+            gesetzt werden.
+            \item Schließlich muss der \glsit{glo:cmake}-Cache in der \glsit{glo:ide} gelöscht und die \glsit{glo:cmake}-Dateien neu geladen werden.
+        \end{enumerate}
+
+        Um diesen Prozess im Plugin weitesgehend zu automatisieren, muss die \glsit{glo:cmake}-Datei aus Listing \ref{cccmakeconf}
+        automatisch in das oberste Verzeichnis des Projekts geschrieben werden. Der Pfad zur \glsit{glo:toolchain} ist
+        dabei in Form einer Benutzereinstellung zu setzen.
+
+        \subsubsection{OpenOCD-Frontend}
+        Bei der Implementierung des \glsit{glo:openocd}-Frontends sind einige Sachen zu beachten.
+
+        Auf Unix-ähnlichen
+        \footnote{Mit ``Unix-ähnlichen Systemen'' sind hauptsächlich die Betriebssysteme Linux und OS X gemeint}
+        Systemen benötigt das \glsit{glo:openocd} \glsit{glo:root}-Rechte, um ein Programm-Image auf den Flash-Speicher der Zielhardware
+        herunterzuladen. Dazu wird der \texttt{sudo} Befehl genutzt, welcher bestimmten Benutzern die Möglichkeit gibt
+        einen Prozess, der \glsit{glo:root}-Rechte benötigt, auszuführen ohne das \glsit{glo:root}-Passwort kennen zu müssen.
+        Vorraussetzung ist, dass \texttt{sudo} für den aktuellen Benutzer konfiguriert ist. Ist dies nicht der Fall,
+        muss der Benutzer trotzdem ein Passwort eingeben.
+
+        Das Plugin ruft einen nativen \glsit{glo:openocd}-Prozess auf, indem die Java-\glsplit{glo:api}\\\texttt{Process} und
+        \texttt{ProcessBuilder} verwendet werden.
+
+        Die benötigten \glsit{glo:openocd}-Kommandos lauten
+        \begin{Verbatim}[frame=single]
+$ openocd -f interface/cmsis-dap.cfg -f board/<BOARD CFG>
+        \end{Verbatim}
+        und
+        \begin{Verbatim}[frame=single]
+$ openocd -f board/<BOARD CFG>
+    -c "program <IMAGE> exit <EXIT ADDRESS>"
+        \end{Verbatim}
+
+        Der erste Befehl dient dazu, dass das Programm \glsit{glo:openocd} mit dem \glsit{glo:cmsisdap}-Protokoll
+        konfiguriert und der \glsit{glo:openocd}-Daemon gestartet wird. Bei jedem \glsit{glo:openocd}-Befehl, bei dem
+        der Daemon gestartet wird, muss die Board-Konfiguration angegeben werden.
+
+        Der zweite Befehl dient dazu, den \glsit{glo:openocd}-Daemon zu starten und dabei ein Programm-Image auf den Flash-Speicher
+        des Chips herunterzuladen.
+
+        Beide Befehle werden in Java-Code eingebettet und mit den entsprechenden Parametern versehen, die vom Nutzer
+        in der \glsit{glo:ide} einstellbar sind.
+
+        Außerdem können beim Starten des Daemons noch die gewünschten Port\hyp{}Nummern gesetzt werden. Diese sind
+        standardmäßig so eingestellt, dass der \glsit{glo:gdb}-Server auf Port \texttt{3333}, der \glsit{glo:tcl}-Server auf Port
+        \texttt{6666} und der \glsit{glo:telnet}-Server auf Port \texttt{4444} hört. Da weder der \glsit{glo:tcl}- noch der \glsit{glo:telnet}-Server
+        in diesem Kontext benötigt wird, wird nicht weiter darauf eingegangen.
+
+        \subsubsection{User-Interface}
+        Das User-Interface des Plugins findet sich im Hauptmenü der \glsit{glo:ide} unter dem Menüpunkt
+        \texttt{\underline{E}mbedded Systems} und in der Toolbar am rechten Bildschirmrand wieder.
+        In der Toolbar können bestimmte Konfigurationen, wie zum Beispiel der Pfad zum Programm-Image, vorgenommen werden.
+
+        Die graphischen Komponenten wurden nach Vorgaben des IntelliJ-\glsit{glo:sdk}s mit der Java-\texttt{Swing}-Bibliothek
+        erstellt.
+
+        Beim Registrieren der Aktionen (Starte Daemon, Lade Programm-Image und Generiere \glsit{glo:cmake}-Konfigurationsdatei) in der
+        \texttt{Plugin.xml}-Datei, lassen sich Gruppen und sogenannte \textit{anchor-points} angeben. Diese bestimmen,
+        an welche Stelle im \glsit{glo:ui} die Aktionen als Menüeinträge erscheinen. In diesem Fall wurde eine neue Gruppe
+        erstellt und der Gruppe \texttt{MainMenu} als letztes angehängt.
+
+        Bei jeder Auswahl des Aktionspunktes im Menü wird die in der Aktionsklasse überschriebene Methode
+        \texttt{actionPerformed(ActionEvent e) \{...\}} ausgeführt.
+
+        \subsubsection{Aktueller Stand und Ausblick}
+        Folgende Funktionalitäten wurden im Plugin umgesetzt:
+        \begin{itemize}
+            \item Es wird für den Nutzer eine \glsit{glo:cmake}-Konfigurationsdatei generiert, in der die Verwendung der benötigten
+            \glsit{glo:toolchain} für das Kompilieren eines Firmware-Programms auf \glsit{glo:arm}-Architekturen eingestellt wird.
+            Dabei wird auf die Verfügbarkeit der \glsit{glo:toolchain}-Programme geprüft und CLion versucht bei jedem Laden der
+            neuen \glsit{glo:cmake}-Konfiguration ein Testprogramm zu kompilieren und auszuführen um die Compiler auf ihre
+            Funktionstüchtigkeit zu prüfen.
+            \item Ein kompiliertes Programm kann durch den gestarteten \glsit{glo:openocd}-Daemon per \glsit{glo:usb} auf den Flash-Speicher der
+            Zielhardware heruntergeladen werden. Dabei werden die von \glsit{glo:openocd} bereitgestellten Flash-Algorithmen
+            genutzt.
+            \item Der \glsit{glo:openocd}-Daemon kann, ohne dass die Firmware auf das Board heruntergeladen wird, gestartet werden.
+            Dabei kann der Port für den lokalen \glsit{glo:gdb}-Server gesetzt werden. Über die \glsit{glo:ide} kann eine neue
+            \textit{Remote-Debugging-Configuration} angelegt werden und anschließend das auf der Zielhardware laufende Programm
+            auf Fehler untersucht werden.
+        \end{itemize}
+
+        Da es sich bei dem Plugin lediglich um ein \glsit{glo:proofofconcept} handelt, fehlen einige Aspekte und
+        Komponenten, die zu der Robustheit und \textit{User-Experience} beitragen.
+        \begin{itemize}
+            \item Es muss ein Überblick geschaffen werden, welche Hardware von \glsit{glo:openocd} unterstützt wird. Eine Liste
+            aller verfügbaren Konfigurationsdateien sollte für den Entwickler ohne umfangreiche Suche einsehbar sein.
+            \item Das \glsit{glo:ui} bedarf an vielen Stellen einer Überarbeitung. Beispielsweise sollte dem Nutzer idealerweise
+            ein Status des \glsit{glo:openocd}-Daemons, sowie Informationen zum \glsit{glo:gdb}-Server und der Zielhardware angezeigt werden.
+            \item Das Konfigurieren der \glsit{glo:toolchain} soll einfacher und mit noch wenigeren Umständen geschehen.
+            Zum Beispiel soll der Entwickler nicht mehr den Pfad der \glsit{glo:cmake}-Konfigurationsdatei in CLion
+            als CMake-Option eintragen müssen.
+            \item Fehlende benötigte Software-Komponenten, wie zum Beispiel das \glsit{glo:openocd} oder die
+            \glsit{glo:arm}-Compiler-\glsit{glo:toolchain}, sollen vom Plugin erfasst und automatisch heruntergeladen
+            werden.
+            \item Überwachung (Monitoring) der Zielhardware und die Möglichkeit verschiedene Laufzeitparameter zu
+            ändern, sollten dem Entwickler zur Verfügung stehen.
+            \item Die Konfigurationen für das \glsit{glo:openocd}-Plugin müssen persistent gemacht werden, indem sie in eine
+            Konfigurationsdatei geschrieben und bei jedem Start wieder ausgelesen werden.
+            \item Beim Testen des Plugins wurden trotz \glsit{glo:jvm} unterschiedliche Verhaltensweisen beim Ausführen nativer
+            Prozesse festgestellt. Beispiele hierfür sind die verschiedenen Rechte-Verwaltungen oder die Angabe von
+            Dateipfaden (Leerzeichen, Anführungszeichen, etc.).
+        \end{itemize}
+
+        Letztendlich stellt das Plugin einen ersten Ansatz dar, um eine frei verfügbare Alternative für die Integrierung
+        von Entwicklungswerkzeugen für Embedded-Systeme in eine Entwicklungsumgebung zu schaffen.
+
+        Das \glsit{glo:openocd} steht dabei für ein Entwicklungswerkzeug, welches durch eine eigens implementierte
+        Lösung ersetzt werden soll (siehe Abschnitt \ref{sec:prospect}).

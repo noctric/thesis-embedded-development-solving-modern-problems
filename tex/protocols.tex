@@ -1,0 +1,436 @@
+\section{Hardware-Debugging, Protokolle und Abstraktionen}
+\label{sec:protocols}
+Bestimmte Protokolle und Abstraktionen bieten dem Entwickler einen einheitlichen Weg auf bestimmte Funktionen eines
+Prozessors zuzugreifen. Es bleibt die Frage, wie ein Entwickler diese Technologien für den Entwicklungsprozess nutzen
+kann.
+
+In diesem Kapitel werden alle für den Entwicklungsprozess wichtigen Target-seitigen Technologien, vor allem in Hinblick
+auf Debugging, erläutert.
+
+    \subsection{Ein Schichtenmodell für Embedded-Systeme}
+    \label{sec:layers}
+    Die betrachteten Technologien funktionieren auf verschiedenen Abstraktionsebenen und stellen im Entwicklungskontext
+    ein Schichtenmodell zwischen der tatsächlichen Zielhardware, der vom Nutzer entwickelten Applikation und den
+    Entwicklungswerkzeugen dar.
+
+    %TODO
+    \begin{figure}[h]
+        \centering
+        \caption{Entwicklungsbasiertes Schichtenmodell der Hardware-Abstraktionen}
+        \label{fig:layerhwab}
+        \source{eigene Zeichnung}
+        \includegraphics[scale=0.5]{../Graphiken/hwschichten_v2}
+    \end{figure}
+
+    Abbildung \ref{fig:layerhwab} zeigt den groben Aufbau des Schichtenmodells. \acrshortit{glo:jtag} und \acrshortit{glo:swd} (siehe Abschnitt
+    \ref{sec:jtag} und \ref {sec:swd}) sind dabei direkt an die Hardware gebunden. Grund dafür ist, dass für den
+    \acrshortit{glo:jtag}-Standard sowohl zusätzliche Hardware als auch eine Abstraktion durch das Protokoll vorhanden ist. Das \glsit{glo:cmsisdap}
+    liegt dabei genau über dem \acrshortit{glo:jtag} bzw. \acrshortit{glo:swd}, da es die \acrshortit{glo:jtag}-Funktionalitäten direkt benutzt
+    (siehe Abschnitt \ref{sec:cmsisdap}). \glsit{glo:cmsisdap} gehört zum \glsit{glo:cmsis}, welches auch andere Hardware-Abstraktionen,
+    auf verschiedenen Schichten, wie zum Beispiel \glsit{glo:cmsis}-Core oder \glsit{glo:cmsis}-Driver, enthält (siehe Abschnitt
+    \ref{sec:cmsis}).
+
+    \acrshortit{glo:jtag}, \acrshortit{glo:swd} (optional) und \glsit{glo:cmsisdap} werden primär für das Testen und Aufspielen, sowie die Fehlersuche in
+    Applikationen verwendet.
+
+    Die restlichen aufgeführten Schichten dienen als vom Entwickler in der Applikation zu verwendende Abstraktionen.
+
+	\subsection{JTAG}
+	\label{sec:jtag}
+	\acrshortit{glo:jtag} steht für \textit{Joint Test Action Group} und bezeichnet einen Standard zum Testen von Hardware, welcher 1985
+	in Zusammenarbeit von verschiedenen Hardware-Herstellern erarbeitet wurde und als Standard des \glsit{glo:ieee} festgehalten ist.
+	Der Standard wurde ursprünglich entwickelt, um Komponentenbasiertes Testen, Vernetzung und Interaktionen von
+	verschiedenen Komponenten auf einem \glsit{glo:ic} zu vereinfachen bzw. zu ermöglichen\citep[vgl.~Kap.~2]{Rath2005}.
+	Das Testverfahren wird \textit{Boundary Scan} genannt.
+	Am häufigsten benutzt wird \acrshortit{glo:jtag} zum Programmieren und Debuggen eines \glsit{glo:ic}.
+
+    \acrshortit{glo:jtag} umfasst sowohl ein Protokoll als auch die entsprechende Hardware. Die Hardware sitzt auf dem \glsit{glo:ic} und ermöglicht
+    zusammen mit dem \acrshortit{glo:jtag}-Protokoll direkten Zugriff auf bestimmte Funktionalitäten eines Prozessors.
+
+    Ein \acrshortit{glo:jtag}-komformes Gerät enthält ein \glsit{glo:ir}, \glsit{glo:dr} und
+    ein \glsit{glo:tap}. Die beiden Register sind als Schieberegister
+    (engl. ``shift register'') implementiert, d.h. der Speicherinhalt von aneinandergeketteten \glsplit{glo:flipflop} wird
+    pro Takt ins nächste \glsit{glo:flipflop} verschoben.
+    Als \glsit{glo:dr} können je nach Befehl verschiedene Register eingesetzt werden.
+
+    Jeder Pin auf dem \glsit{glo:ic} enthält eine \acrshortit{glo:jtag}- bzw. Boundary-Scan-Zelle, die sowohl Daten vom Pin ``aufnehmen'' als auch
+    auf den Pin schreiben kann. Aufgenommene, so wie geschriebene Daten werden seriell über die \acrshortit{glo:jtag}-Zellen durch den
+    \glsit{glo:tap} verschoben\citep[]{Corelis}.
+
+    Der \glsit{glo:tap} stellt die \acrshortit{glo:jtag}-Hardware-Schnittstelle dar und besteht aus den folgenden Anschlüssen
+    \begin{description}
+        \item[TDI] Die Testdaten werden über \texttt{Test Data Input} in die \acrshortit{glo:jtag}-Zellen geschoben
+        \item[TCK] Das Signal-Interface \texttt{Test Clock} taktet die \acrshortit{glo:jtag}-State-Machine
+        \item[TMS] Kontrolliert wird die \acrshortit{glo:jtag}-State-Machine (\glsit{glo:tap}-Controller) von dem \texttt{Test Mode Select}
+        \item[TDO] Die Testdaten werden über das \texttt{Test Data Output} zurück gelesen
+        \item[TRST] Das \texttt{Test Reset} ist optional und ermöglicht asynchrones Zurücksetzen des \glsit{glo:tap}-Controllers
+    \end{description}
+
+    \texttt{TDI}, \texttt{TCK}, \texttt{TMS} und \texttt{TRST} sind für den Prozessor also Output-Signale und
+    \texttt{TDO} ein Input-Signal.
+    Diese Pins sind üblicherweise dediziert, d.h. sie werden nicht für andere Zwecke genutzt.
+
+    Im \glsit{glo:datasheet} der Test-Hardware \texttt{AT SAM E70 Q21}, stehen die unterstützten \acrshortit{glo:jtag}-Befehle. Dem Standard nach
+    sind drei Befehle verpflichtend, sie müssen also vom entsprechenden Chip-Hersteller implementiert werden\footnote{
+    \citep[]{Corelis}}:
+    \begin{description}
+    \item[\texttt{BYPASS}] Beim BYPASS wird das \textit{Bypass-Register} zwischen \texttt{TDI} und \texttt{TDO}
+    geschaltet. Das Bypass-Register hält ein einzelnes Bit (engl. ``single bit register'') und umgeht das bei EXTEST
+    verwendete längere Boundary-Scan-Register. Dieser Befehl wird genutzt, um Geräte bei einer Verkettung von
+    \acrshortit{glo:jtag}-Geräten zu umgehen. Dabei bleibt das betroffene Gerät funktionsfähig.
+    \item[\texttt{EXTEST}] Der EXTEST-Befehl wird verwendet, um die zusammengeschalteten Verbindungen zwischen den
+    Geräten durchzuführen. Das Boundary-Scan-Register (eins der \glsit{glo:dr}) wird zwischen \texttt{TDI} und
+    \texttt{TDO} geschaltet.
+    Dabei wird das Gerät in den \textit{externen} Modus versetzt, d.h. Testdaten werden über die
+    \acrshortit{glo:jtag}-Zellen auf die Pins geschoben. Gleichzeitig nehmen die \acrshortit{glo:jtag}-Zellen auch die von den Pins geschriebenen Daten
+    auf. EXTEST ist der Hauptbefehl um Boundary-Scans durchzuführen.
+    \item[\texttt{SAMPLE/PRELOAD}] SAMPLE ähnelt dem EXTEST\hyp{}Befehl, indem das Boundary\hyp{}Scan\hyp{}Register zwischen
+    \texttt{TDI} und \texttt{TDO} geschaltet wird. Der Unterschied liegt darin, dass das Boundary-Scan-Gerät trotzdem
+    funktionsfähig bleibt. Das Boundary-Scan-Register ist also zugreifbar, ohne dass das Gerät seine
+    Funktion unterbrechen muss.
+    \end{description}
+
+    Der in Abbildung \ref{fig:tapcontroller} skizzierte \glsit{glo:tap}-Controller bezeichnet eine \glsit{glo:statemachine}
+    mit 16 verschiedenen Zuständen.
+    Diese \glsit{glo:statemachine} enthält Zustände, welche sowohl das \glsit{glo:dr} als auch das \glsit{glo:ir}
+    aufnehmen und Daten auf besagte Register schieben können.
+    \begin{figure}[h]
+        \centering
+        \caption{Endlicher Automat des TAP-Controllers}
+        \source{
+            \href{
+                https://commons.wikimedia.org/w/index.php?curid=45147866}{Von Rudolph H 17:30, 25. Jul. 2009 (CEST)
+                - Eigene Zeichung, Copyrighted free use
+                }
+        }
+        \label{fig:tapcontroller}
+        \includegraphics[scale=0.3]{../Graphiken/JTAG_TAP_Controller_State_Diagram.png}
+    \end{figure}
+    \acrshortit{glo:jtag} stellt also eine einheitliche Schnittstelle zur internen Logik des \glsit{glo:ic} dar. Somit können vom Chip-Hersteller
+    implementierte Funktionalitäten, wie zum Beispiel das Setzen von Hardware-Breakpoints durch eine externe Instanz
+    (sei es zusätzliche Hardware), genutzt werden.
+
+    Eine von \glsit{glo:arm} entwickelte Alternative zu \acrshortit{glo:jtag} ist das im nächsten Abschnitt \ref{sec:swd} behandelte
+    \acrshortit{glo:swd}, welches den ``Vorteil hat, dass es pinkompatibel zu \acrshortit{glo:jtag} ist, es aber erlaubt, softwaregesteuert
+    zwischen \acrshortit{glo:jtag} und \acrshortit{glo:swd} zu wechseln''\citep[]{Asche2017}.
+
+    Ein \acrshortit{glo:jtag}-Adapter ist ein externer Mikrocontroller mit spezieller Firmware, der vom Host-System gesendete
+    Debug-Befehle (z.B. über \glsit{glo:usb}) in \acrshortit{glo:jtag}-Befehle umsetzt und direkt an das \acrshortit{glo:jtag}-Interface weiterleitet.
+    Eine Alternative zu diesen externen Hardware-Debuggern ist ein auf dem \glsit{glo:pcb} integrierter \glsit{glo:ic} mit einer
+    \glsit{glo:cmsisdap}-fähigen Firmware. Weiteres dazu in Abschnitt \ref{sec:cmsisdap}.
+	\subsection{SWD}
+	\label{sec:swd}
+	Im Gegensatz zu dem im vorherigen Abschnitt \ref{sec:jtag} behandelten \acrshortit{glo:jtag}-Standard, ist
+	\acrfullit{glo:swd} eine von \glsit{glo:arm} implementierte proprietäre Technologie, die \acrshortit{glo:jtag}-Funktionalität zu
+	effizienteren Umständen verspricht.
+
+	\acrshortit{glo:swd} benötigt im Vergleich zu \acrshortit{glo:jtag} nur 2 Pins für die Signal-Interfaces.
+	\begin{description}
+	    \item[\texttt{SWDIO}] Bidirektionaler Daten-Pin zum Schreiben und Lesen von Daten. Ersetzt die in \acrshortit{glo:jtag}
+	    verwendeten \texttt{TDI}- und \texttt{TDO}-Kontakte, wobei der in \acrshortit{glo:jtag} als \texttt{TMS} bezeichnete Pin bei
+	    \acrshortit{glo:swd} in den \texttt{SWDIO} umgewandelt wird \citep[vgl.~S.~6]{Booth}
+	    \item[\texttt{SWCLK}] Ähnlich wie bei \acrshortit{glo:jtag} ein Taktungs-Pin zum Takten des Test-Controllers. Dieser ersetzt
+	    den \acrshortit{glo:jtag}-\texttt{TCK}-Pin \citep[vgl.~S.~6]{Booth}
+	\end{description}
+
+    \acrshortit{glo:swd} nutzt ein nach \glsit{glo:arm} standartisiertes bidirektionales Protokoll, welches im \glsit{glo:adi} v5
+    definiert ist, um Daten vom Debugger zum Target-System zu übertragen
+    \footnote{\href{https://www.arm.com/products/processors/serial-wire-debug.php}
+    {ARM SWD Produkt Seite, Zugriff: 15.07.2017}}.
+    Das \glsit{glo:adi} ist eine allgemeine Abstraktion und Definierung eines standartisierten
+    Debug-Interfaces für \glsit{glo:arm} Prozessoren. Version 5 des \glsit{glo:adi} ist jedoch darauf ausgelegt, nicht
+    \glsit{glo:arm}-prozessorspezifisch zu sein, sondern eine weitere Bandbreite an Geräten zu unterstützen
+    \citep[vgl.~Kap.~1]{ArmAdi}.
+    \acrshortit{glo:swd} ist kompatibel mit allen \glsit{glo:arm} Prozessoren und anderen Prozessoren, welche \acrshortit{glo:jtag} zur Fehlersuche nutzen. Es verschafft
+    außerdem Zugang zu den Debug-Registern der oben genanntent \glsit{glo:arm}-Cortex-Prozessorfamilien
+    \footnote{\href{https://www.arm.com/products/processors/serial-wire-debug.php}
+    {ARM SWD Produkt Seite, Zugriff: 15.07.2017}}.
+
+    \subsection{ARM CMSIS}
+    \label{sec:cmsis}
+    Die \glsit{glo:cmsis}-Bibliothek wird von \glsit{glo:arm} entwickelt und stellt eine
+    herstellerunabhängige Hardware-Abstraktion für \glsit{glo:arm}-Cortex-Architekturen dar. Es ist der Versuch eine einheitliche
+    und konsistente Schnittstelle für den Zugriff auf die Hardware zu schaffen. ``Creation of software is a major cost
+    factor in the embedded industry. Standardizing the software interfaces across all Cortex-M silicon vendor products,
+    especially when creating new projects or migrating existing software to a new device, means significant cost
+    reductions.''\footnote{\href{https://developer.arm.com/embedded/cmsis}{ARM cmsis Produktbeschreibung}}
+
+    Die \glsit{glo:cmsis}-Bibliothek stellt eine Vielzahl an Funktionen für den Zugriff auf die Hardware auf unterschiedlichen
+    Ebenen bereit.
+
+    ``Prozessorhersteller (oder ggf. Drittfirmen oder die Public Domain) werden dazu ermutigt, diese Bibliotheken für
+    ihre Produkte zu realisieren; gleichzeitig sollen Middlewarehersteller und Entwickler gerätetreiberseitig ebenfalls
+    diese eingekapselten Aufrufe benutzen, so dass theoretisch von \glsit{glo:arm} „angestupst“ eine sehr große Interoperabilität
+    zwischen Soft- und Middleware und verschiedenen ACPs besteht.''
+    \footnote{ACP steht für \textit{ARM Cortex based processor}}
+    \citep[Kap.~2.1]{Asche2017}
+
+    \glsit{glo:cmsis} besteht zu heutigem Zeitpunkt aus verschiedenen Paketen auf verschiedenen Abstraktionsstufen.
+    Das \glsit{glo:cmsis}-Core ist der Grundbaustein der \glsit{glo:cmsis}-Bibliothek und stellt Kernfunktionen für den Zugriff auf die
+    Peripherie dar. Außerdem enthält es bestimmte intrinsische Funktionen.
+
+    \textbf{Beispiel:} Um einen Interrupt zu aktivieren, kann die Funktion
+    \begin{lstlisting}
+void NVIC_EnableIRQ(IRQn_Type IRQn)
+    \end{lstlisting}
+    mit \texttt{IRQn} als Interrupt-Nummer verwendet werden.
+
+    Für die Fehleranalyse sind vor Allen die beiden Pakete \glsit{glo:cmsis}-SVD und \glsit{glo:cmsisdap} relevant.
+    Das \glsit{glo:cmsis}-SVD soll es Debuggern ermöglichen, eine genaue Übersicht über Peripherie zu liefern, ohne auf
+    die tatsächliche Implementierung dieser achten zu müssen.
+
+    Auf \glsit{glo:cmsisdap} wird in Abschnitt \ref{sec:cmsisdap} genauer eingegangen.
+
+    \textit{\glsit{glo:cmsis}\hyp{}\glsit{glo:rtos}} stellt ein generisches \glsit{glo:rtos}\hyp{}Interface für \glsit{glo:arm}-Cortex basierte Geräte bereit.
+    Es ist eine Schnittstelle für Software-Komponenten, welche \glsit{glo:rtos}-Funktionalität benötigen und ermöglicht den
+    einheitlichen Zugriff auf \glsit{glo:rtos}\hyp{}Funktionalitäten verschiedener Echtzeitbetriebssysteme.
+
+    \begin{figure}[h]
+    	\caption{Die CMSIS Softwarepakete}
+    	\source{
+    	    \href{
+    	        https://developer.arm.com/embedded/cmsis
+    	    }{
+    	        ARM CMSIS Produkt Seite
+    	    }, Zugriff: 17.08.2017
+    	}
+    	\label{fig:cmsis_packages}
+        \centering
+        \includegraphics[scale=0.3]{../Graphiken/CMSIS_block_diagram.png}
+    \end{figure}
+
+    Eine Bibliothek für das Verarbeiten von Digitalen Signalen ist unter dem Namen \glsit{glo:cmsis}-DSP vorhanden und
+    enthält viele auf Cortex-M optimierte Verarbeitungs- und Berechnungsfunktionen.
+
+    Als letztes ist ein Peripherie-Treiber-Interface \glsit{glo:cmsis}-Driver für die Verwendung in Middleware und
+    Nutzerapplikationen verfügbar. Es ist ein von \glsit{glo:arm} definiertes Interface, welches von unabhängigen
+    Hardware-Herstellern implementiert werden kann. Code-Basen, die mit dem \glsit{glo:cmsis}-Driver-Interface arbeiten sind in der
+    Theorie portabler als diejenigen, welche direkt die herstellerspezifischen Treiber
+    nutzen. Da es sich hierbei lediglich um einen vorgeschlagenen Standard handelt, sind die Hardware-Hersteller nicht
+    dazu verpflichtet diesen Standard einzuhalten bzw. zu implementieren.
+
+	\subsection{CMSIS-DAP}
+	\label{sec:cmsisdap}
+	\acrfullit{glo:cmsisdap} ist ein Produkt in der \glsit{glo:cmsis}-Reihe (siehe Abschnitt \ref{sec:cmsis}) und bezeichnet die Umsetzung eines
+	von \glsit{glo:arm} definierten Protokolls für den Zugriff auf die Debug-Funktionalitäten eines Prozessors.
+
+	Der \glsit{glo:dap} ist eine Implementierung des in Abschnitt \ref{sec:swd} erwähnten \glsit{glo:adi}.
+	Der \glsit{glo:dap} wird in \glsplit{glo:dp} und \glsplit{glo:ap} aufgeteilt.
+	Die \glsplit{glo:dp} können von externen Debuggern genutzt werden, um den \glsit{glo:dap} zu erreichen, über die \glsplit{glo:ap} kann
+	auf On-Chip-Ressourcen zugegriffen werden. \acrshortit{glo:jtag} und \acrshortit{glo:swd} nutzen \glsit{glo:dap} für die Kommunikation mit der entsprechenden
+	Hardware.
+
+	\glsit{glo:cmsisdap} läuft als Firmware auf einer Debug-Einheit, ein zweiter \glsit{glo:ic}, welcher sich auf dem \glsit{glo:pcb} befindet.
+	Dieser Chip wird üblicherweise direkt per \glsit{glo:usb} mit einem Host-System verbunden. Über die Debug-Einheit können
+	mit Hilfe des \glsit{glo:cmsisdap}-Protokolls auf direktem Weg \acrshortit{glo:jtag}-Befehle an die Ziel-Hardware gesendet werden. Es stellt
+	also ein unmittelbares On-Chip-Debug-Interface dar, welches die Verwendung von externen Hardware-Debuggern obsolet
+	macht. Falls unterstützt, kann auch \acrshortit{glo:swd} genutzt werden, um mit dem Prozessor zu
+	kommunizieren (siehe Abschnitt \ref{sec:swd}).
+
+	\begin{figure}[h]
+	    \centering
+	    \caption{CMSIS-DAP Übersicht}
+	    \source{\citep[Übersicht]{CMSISDAP}}
+	    \label{fig:cmsisdapoverview}
+	    \includegraphics[scale=0.7]{../Graphiken/cmsis_dap}
+	\end{figure}
+
+	Das \glsit{glo:cmsisdap}-Protokoll liefert Befehle zum Kommunizieren mit der Ziel-Hardware. Nebenbei können auch bestimmte
+	Informationen über die Debug-Einheit abgerufen werden. Listing \ref{cmsisdapled} zeigt beispielhaft einen
+	Kommunikationsaufruf mit einer auf dem \textit{Evaluation Board} von Atmel verbauten Debug-Einheit.
+
+	Das \glsit{glo:cmsisdap}-Protokoll definiert Befehle, die über die entsprechende Befehls-ID ausgeführt werden.
+	In Listing \ref{cmsisdapled} lautet die Befehls-ID für den LED-Befehl (\texttt{dap\_led}) \texttt{0x01} und wird in
+	\texttt{buf[1]} geschrieben.
+	Die Felder \texttt{buf[2]} und \texttt{buf[3]} enthalten die entsprechenden Parameter für den LED-Befehl.
+	\texttt{buf[0]} ist die \texttt{report id} für das \acrshortit{glo:hid}-Protokoll und hat nichts mit \glsit{glo:cmsisdap} zu tun.
+
+	\newpage
+
+	\begin{lstlisting}[
+	    language=Rust,
+	    caption=CMSIS-DAP-Befehl um die LEDs auf der Debug-Einheit zu bedienen (Rust-Code),
+	    label=cmsisdapled,
+	    float,
+	    floatplacement=H
+	]
+// HELPER Send LED Command to CMSIS_DAP Dev --> write
+fn dap_led(dev: &hidapi::HidDevice, led: u8, output: u8) {
+    let mut buf: [u8; 512 + 1] = [0xff; 512 + 1];
+    buf[0] = 0x00;      // report id
+    buf[1] = 0x01;      // dap_led
+    buf[2] = led;       // LED: specifies the LED
+                        // that is addressed: 0 = Connect LED;
+                        // 1 = Running LED.
+    buf[3] = output;    // Output: specifices the status of
+                        // the LED after the command: 1 = LED on;
+                        // 0 = LED off.
+
+    println!("writing to device.");
+
+    let res = dev.write(&buf).unwrap();
+
+    println!("wrote {:?} Byte(s).", res);
+}
+	\end{lstlisting}
+
+	Verdeutlicht werden kann die Verwendung von \glsit{glo:cmsisdap} in Kombination mit \acrshortit{glo:jtag} und \acrshortit{glo:swd} an einem Beispiel. Hierzu
+	wird zunächst der Quelltext des \glsit{glo:openocd} genauer untersucht.
+	Das folgende Beispiel zeigt eine Kette von Aufrufen der verschiedenen Programmmodule innerhalb des \glsit{glo:openocd}.
+
+	Es wird angenommen, dass das Host-System mit einer Debugging-Software einen Breakpoint in der auf dem Prozessor
+	laufenden Firmware setzen möchte (Genaueres zu Debugging in Abschnitt \ref{sec:debugging}).
+	Der Fokus bei dem Beispiel liegt auf der letzten Instanz, in der der Breakpoint Befehl vom \glsit{glo:cmsisdap}-Programmmodul
+	empfangen und schließlich per \glsit{glo:usb} an die Debug-Einheit gesendet wird.
+
+    \begin{enumerate}
+    \item \texttt{gdb\_server.c}
+    \begin{itemize}
+        \item Empfängt Breakpoint-Befehl von Debugging-Software (zum Beispiel eine \glsit{glo:ide} oder lokaler \glsit{glo:gdb})
+        \item Übergibt den Breakpoint-Befehl weiter an ein allgemeines Hardware-Interface \texttt{target.c}
+        \begin{lstlisting}
+static int gdb_write_memory_binary_packet(struct connection *connection, char const *packet, int packet_size){...}
+        \end{lstlisting}
+    \end{itemize}
+     \item \texttt{target.c}
+     \begin{itemize}
+        \item Interface\hyp{}ähnliche Programmlogik sucht die korrekte Prozessorfamilie heraus und leitet den Befehl weiter
+        an die konkrete Hardware\hyp{}Abstraktion
+        \begin{lstlisting}
+static int target_write_buffer_default(struct target *target, uint32_t address, uint32_t count, const uint8_t *buffer){...}
+        \end{lstlisting}
+     \end{itemize}
+     \item \texttt{cortex\_m.c}
+     \begin{itemize}
+        \item Berücksichtigt Besonderheiten, die bei der Cortex-M-Prozessorfamilie auftreten. Hier sind die
+        Debug-spezifischen Methoden enthalten, die über den Befehl
+        \begin{lstlisting}
+static int cortex_m_write_memory(struct target *target, uint32_t address, uint32_t size, uint32_t count, const uint8_t *buffer) {...}
+        \end{lstlisting}
+        weiter an das Debug-Interface gereicht werden
+     \end{itemize}
+     \item \texttt{arm\_adi\_v5.h/.c}
+     \begin{itemize}
+        \item Enthält Methoden zum Ausführen der im \glsit{glo:adi} v5 (siehe Abschnitt \ref{sec:swd}) von \glsit{glo:arm}
+        definierten Befehle
+        \item In diesem Fall ist es der Schreibbefehl für den Speicherpuffer, welcher über die Methode
+        \begin{lstlisting}
+int mem_ap_sel_write_buf(struct adiv5_dap *swjdp, uint8_t ap, const uint8_t *buffer, uint32_t size, uint32_t count, uint32_t address) {...}
+        \end{lstlisting}
+        und anschließend
+        \begin{lstlisting}
+static inline int dap_queue_ap_write(struct adiv5_dap *dap, unsigned reg, uint32_t data){...}
+        \end{lstlisting}
+        den Breakpoint-Befehl schreibt
+     \end{itemize}
+     \item \texttt{adi\_v5\_swd.c}
+        \begin{itemize}
+        \item Der Breakpoint-Befehl wird in das \acrshortit{glo:swd}-Protokoll überführt
+        \begin{lstlisting}
+static int swd_queue_ap_write(struct adiv5_dap *dap, unsigned reg, uint32_t data){...}
+        \end{lstlisting}
+     \end{itemize}
+     \item \texttt{cmsis\_dap\_usb.c}
+     \begin{itemize}
+        \item Auf Software-Ebene ist dies die letzte Schicht, die den Breakpoint-Befehl endgültig an die Ziel-Hardware
+        sendet
+        \item Hier wird zunächst das Kommando in das \glsit{glo:cmsisdap}-Protokoll überführt und in eine Warteschlange geschrieben
+        \item Über das \glsit{glo:cmsisdap}-Kommando \texttt{CMSIS\_DAP\_TFER}, welches die definierte ID \texttt{0x05} besitzt,
+        wird nun der Breakpoint-Befehl per \glsit{glo:usb} an den Prozessor gesendet
+        \item Der Transfer-Befehl ähnelt dem oben gezeigten Code-Beispiel \ref{cmsisdapled} mit dem Unterschied, dass
+        bei Listing \ref{cmsisqueue} eine gesamte Warteschlange an Befehlen hintereinander abgearbeitet wird.
+        Dieser sieht (in gekürzter Fassung) wie folgt aus:
+        \begin{lstlisting}[caption={OpenOCD, \texttt{cmsis\_dap\_usb.c}}, label=cmsisqueue]
+static int cmsis_dap_swd_run_queue(struct adiv5_dap *dap)
+{
+    uint8_t *buffer = cmsis_dap_handle->packet_buffer;
+    size_t idx = 0;
+    buffer[idx++] = 0;	/* report number */
+    buffer[idx++] = CMD_DAP_TFER;
+    buffer[idx++] = 0x00;	/* DAP Index */
+    buffer[idx++] = pending_transfer_count;
+
+    for (int i = 0; i < pending_transfer_count; i++) {
+        uint8_t cmd = pending_transfers[i].cmd;
+        uint32_t data = pending_transfers[i].data;
+
+        buffer[idx++] = (cmd >> 1) & 0x0f;
+        if (!(cmd & SWD_CMD_RnW)) {
+        	buffer[idx++] = (data) & 0xff;
+        	buffer[idx++] = (data >> 8) & 0xff;
+        	buffer[idx++] = (data >> 16) & 0xff;
+        	buffer[idx++] = (data >> 24) & 0xff;
+        }
+    }
+
+    queued_retval = cmsis_dap_usb_xfer(cmsis_dap_handle, idx);
+}
+    \end{lstlisting}
+    \end{itemize}
+    \end{enumerate}
+
+    \subsection{Hardware Abstraction Layer}
+    Der \glsit{glo:hal} spielt mit der wachsenden Anzahl an verschiedenen Variationen von Hardware
+    eine immer größer werdende Rolle in der Entwicklung von Embedded-Systemen. Der \glsit{glo:hal} stellt als weitere
+    Abstraktionsschicht ein Bindeglied zwischen Applikation und Hardware dar. Diese verwenden in der Regel das
+    \glsit{glo:cmsis}-Core als unterste Abstraktionsschicht und bauen darauf auf.
+
+    Chip-Hersteller bieten ihren eigenen \glsit{glo:hal} an, um einen einfacheren Zugriff auf die
+    entsprechende Peripherie eines \glsit{glo:pcb}s zu ermöglichen. Beispielsweise stellt Atmel das
+    \glsit{glo:asf} zur Verfügung.
+
+    \subsection{Applikationsentwicklung mit Abstraktionsschichten}
+    \label{sec:abstractionoverview}
+    Die vorgestellten Technologien ergeben, wie das Code-Beispiel in Abschnitt \ref{sec:cmsisdap} verdeutlichen soll,
+    in Kombination miteinander ein Schichtenmodell indem Hardware-Schnittstellen und Protokolle aufeinander aufbauen.
+
+    Tabelle \ref{tab:hwabstractionlayer} zeigt eine vereinfachte Strukturierung der verschiedenen Schichten. Es ist
+    anzumerken, dass \acrshortit{glo:swd} oder \glsit{glo:cmsis}-Driver nicht zwangsläufig verwendet werden. Die Tabelle dient lediglich der
+    Verdeutlichung der Struktur der beschriebenen Technologien.
+
+    Prinzipiell kann ein Entwickler seine Anwendung auch ohne jegliche Abstraktionen direkt auf der Hardware
+    (``bare metal'') entwickeln. Dies hat aber zu Folge, dass der Aufwand um ein Vielfaches gesteigert wird und
+    möglicherweise bei verschiedenen Applikationen viel redundante Arbeit entsteht. Einfache Zugriffe auf
+    bestimmte Funktionalitäten müssen für jede neue Applikation neu implementiert werden.
+
+    \begin{table}[h]
+        \centering
+        \caption{Abstraktionsschichten bei der Entwicklung von Embedded-Systemen}
+        \label{tab:hwabstractionlayer}
+        \begin{tabular}{| c | C{7cm} |}
+        \hline
+        \textbf{6.} & Applikation                                           \\ \hline
+        \textbf{5.} & \glsit{glo:cmsis}-Driver / herstellerunabhängige Schnittstelle   \\ \hline
+        \textbf{4.} & \glsit{glo:hal} / Treiber / Betriebssystem                        \\ \hline
+        \textbf{3.} & \glsit{glo:cmsis}-Core und \glsit{glo:cmsisdap}                              \\ \hline
+        \textbf{2.} & \acrshortit{glo:swd}                                                   \\ \hline
+        \textbf{1.} & \acrshortit{glo:jtag}                                                  \\ \hline
+        \end{tabular}
+    \end{table}
+
+    Da das \acrshortit{glo:jtag}-Protokoll der einzige Standard in dem Bereich ist, bauen viele Technologien und Abstraktionen darauf
+    auf. Dies führt dazu, dass es auf vielen Prozessoren verbaut und unterstützt wird.
+
+    \acrshortit{glo:swd} und \glsit{glo:cmsis} sind die von \glsit{glo:arm} entwickelten Technologien und sind deshalb, wegen der weiten Verbreitung an \glsit{glo:arm}
+    Prozessorarchitekturen bei Embedded-Systemen, sehr geläufig.
+
+    Die von den jeweiligen Hardware\hyp{}Herstellern bereitgestellten Hardware\hyp{}Abstraktionen können vom Entwickler für eine
+    Applikation verwendet werden. Ein fehlender Standard bei diesen Abstraktionen macht eine Applikation in vielen
+    Fällen schwer portierbar.
+
+    Alternativ dazu würde auf selber Ebene ein Betriebssystem liegen. Auch das Betriebssystem stellt eine
+    Hardware-Abstraktion dar und ist von der verwendeten Prozessorarchitektur abhängig.
+    \\
+
+    Man betrachtet den Entwicklungszyklus einer Hardware-Applikation und der in Abschnitt \ref{sec:layers} erwähnten
+    unterschiedlichen Verwendung für die Schichten und stellt folgende Problematiken fest:
+
+    Das erste Problem ist ein fehlender Standard der vom Hersteller implementierten Hardware-Abstraktionen.
+    Erneut bahnt sich hier das Problem an, an die Software eines bestimmten Herstellers und damit auch potenziell
+    an qualitativ geringere Software gebunden zu sein. Ein fehlender Standard des \glsit{glo:hal}s verschlechtert die Portierbarkeit
+    einer Code-Basis und der Entwickler wird bei einem Wechsel der Hardware mit redundanter Arbeit belastet.
+    Abschnitt \ref{sec:overallsolution} beschäftigt sich im ersten Teil mit einem Lösungsansatz für dieses Problem.
+
+    Die zweite Problematik ist der eigentliche Entwicklungsprozess einer Hardware-Applikation, welche das Aufspielen
+    und Debuggen von Applikationen, basierend auf den \acrshortit{glo:jtag}-/\acrshortit{glo:swd}-Protokollen, beinhaltet. Ein Lösungsansatz für dieses
+    Problem wird im zweiten Teil des Abschnitts \ref{sec:overallsolution} vorgestellt und dokumentiert.

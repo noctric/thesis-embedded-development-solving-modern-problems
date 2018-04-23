@@ -1,0 +1,61 @@
+\appendix
+\section{Abgabe}
+    Teil der Abgabe ist ein Datenträger mit dem Quelltext, welcher im Rahmen dieser Arbeit erstellt worden ist.
+    \dirtree{%
+    .1 /.
+    .2 \texttt{embedded\_plugin.jar} \DTcomment{Das Plugin als \texttt{.jar}-Datei um es zu installieren}.
+    .2 EmbeddedPlugin/ \DTcomment{Plugin}.
+    .3 resources/ \DTcomment{Ressourcen}.
+    .4 icon/.
+    .4 META-INF/ \DTcomment{Enthält die Konfigurationsdatei für das Plugin}.
+    .3 src/ \DTcomment{Quellcode}.
+    .2 Bachelorarbeit\_Calvert\_4012564.pdf \DTcomment{Diese Arbeit, in digitaler Form}.
+    }
+\section{Installationsanleitung}
+    \subsection{Software-Abhängigkeiten}
+    \begin{itemize}
+        \item \href{https://www.jetbrains.com/clion/}{CLion Version 2017.2}\\
+        \texttt{Build \#CL-172.3317.49, built on July 11, 2017}
+        \item \href{http://openocd.org/}{Open On-Chip Debugger 0.10.0} Lizensiert unter der GNU GPL v2
+        \item \href{https://developer.arm.com/open-source/gnu-toolchain/gnu-rm}{GNU ARM Embedded Toolchain}
+        \item \href{https://www.jetbrains.com/idea/}{IntelliJ} Community oder Ultimate Edition (optional, um das
+        Projekt zu bauen)
+    \end{itemize}
+
+    \subsection{CLion Plugin installieren}
+    Plugins werden in CLion unter dem Menüpunkt \texttt{Settings} $\rightarrow$ \texttt{Plugins}
+    verwaltet. Hier kann \texttt{Install plugin from disk} ausgewählt werden, um ein Plugin aus einer \texttt{.jar}-
+    oder \texttt{.zip}-Datei zu installieren.
+
+    Alternativ hierzu kann die Archiv-Datei, welche das Plugin enthält, in das Plugin-Verzeichnis der entsprechenden
+    CLion-Installation kopiert werden und anschließend in der Plugin-Liste ausgewählt werden. Hier wird auf Abbildung
+    \ref{fig:pluginlistinstall} verwiesen.
+
+    \begin{figure}[h]
+        \centering
+        \caption{Plugin Liste mit hinzugefügtem Plugin}
+        \label{fig:pluginlistinstall}
+        \includegraphics[scale=0.5]{../Graphiken/plugininstall}
+    \end{figure}
+
+    Um die Funktionalität des Plugins zu aktivieren ist ein Neustart der IDE nötig.
+
+    \subsection{Source Code}
+    Der mitgelieferte Source-Code kann bei Bedarf selbst kompiliert und ausgeführt werden.
+    Da IntelliJ keine Modulerkennung für Plugins unterstützt kann externer Plugin-Source-Code nicht ohne Weiteres
+    importiert und ausgeführt werden.
+    Um den Source-Code trotzdem selbst ausführen zu können muss über
+    \href{https://www.jetbrains.com/idea/}{IntelliJ} zunächst ein \underline{neues} Plugin-Projekt angelegt werden.
+    Ist beim Project-Wizard keine Plugin-Option verfügbar, muss zunächst die \textit{Plugin-Development}-Erweiterung
+    von Jetbrains heruntergeladen und aktiviert werden (\texttt{Settings} $\rightarrow$ \texttt{Plugins}).
+
+    Wurde ein neues Plugin-Projekt angelegt, muss das korrekte SDK ausgewählt werden. Die Einstellung erfolgt unter
+    dem Menüpunkt \texttt{File} $\rightarrow$ \texttt{Project Structure} $\rightarrow$ \texttt{Project}.
+    Danach \texttt{New...} und anschließend \texttt{IntelliJ Plattform Plugin SDK} auswählen und auf den CLion
+    Installationsordner zeigen.
+
+    Zuletzt muss der gesamte Source-Code (\texttt{./src}) in den Source-Ordner und alle Ressourcen (./resources) in
+    den Ressourcenordner des neu angelegten Projekts kopiert werden. Die \texttt{plugin.xml}-Datei soll dabei
+    überschrieben werden.
+
+    Nach diesen Schritten ist das Plugin-Projekt bereit zur Ausführung.

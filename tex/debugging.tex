@@ -1,0 +1,211 @@
+\section{Debugging}
+\label{sec:debugging}
+In diesem Kapitel sollen zunächst die Grundprinzipien der Fehlersuche in Firmware-Programmen erläutert werden. Im
+Vordergrund stehen hier die in der \glsit{glo:arm}-Cortex-M-Familie unterstützten Debugging-Features, das durch
+\acrshortit{glo:jtag} abgelöste \glsit{glo:ice}, sowie ein Einblick in die Debugging-Technologien auf Host-Seite. Es soll
+weiterhin auf den für die Fehlersuche in Programmen für Embedded-Systeme relevanten Unterschiede zwischen Soft- und
+Hardware Breakpoints eingegangen werden.
+Anschließend folgt eine Ausführung der Funktionsweise von vorhandenen Host-seitigen Debugging-Lösungen.
+	\subsection{Debugging-Features}
+	\label{sec:debugfeatures}
+	Debugging ist für die meisten Software-Entwickler ein fester Bestandteil des Entwicklungsprozesses. Jede von
+	Menschen geschriebene Software enthält vorhersehbare und nicht vorhersehbare Fehlerfälle, welche idealerweise
+	im Vorhinein gefunden und korrigiert werden können bzw. müssen. Debugger sind ein mächtiges Werkzeug, das dem
+	Entwickler bei der Fehlersuche behilflich ist.
+	Verschiedene Debugger stellen verschiedene Funktionalitäten und Methoden zur Fehlerfindung bereit. Die klassischen
+    Debugging-Methoden, welche von \glsit{glo:arm}-Cortex-M-Prozessoren unterstützt werden, sind im Folgenden aufgelistet
+    \begin{description}
+        \item[Breakpoint] Breakpoints sind prinzipiell Punkte innerhalb eines Programms, an denen die Ausführung
+        des Programms angehalten wird. Dabei lassen sich wichtige Unterscheidungen treffen:
+        \begin{description}
+            \item[Software Breakpoints] Die für den Software\hyp{}Entwickler bekannte Art von Breakpoints sind
+            Software\hyp{}Breakpoints. Diese können bei einer gewünschten Anweisung im Programm\hyp{}Code platziert werden.
+            Der Debugger ersetzt die Anweisung (oder je nach Architektur nur einen Teil der Anweisung) mit einer
+            speziellen Breakpoint-Anweisung. Bei der Cortex-M-Prozessorfamilie werden Software Breakpoints mit der
+            Anweisung \texttt{BKPT} gesetzt. Die Anzahl der Software Breakpoints ist in der Theorie unbegrenzt (logische
+            Begrenzung durch den Speicher). Wird die Anweisung \texttt{BKPT} ausgeführt, generiert der Prozessor
+            ein Debug-Event, auf welches den Umständen entsprechend reagiert werden kann
+            \citep[vgl. Kap. 14.5]{Yiu2013}.
+            Üblicherweise hält der Prozessor die Ausführung des Programms an und der Entwickler kann mit Hilfe des
+            Debuggers den Speicherinhalt auslesen und ggf. verändern.
+            \item[Hardware Breakpoints] Hardware\hyp{}Breakpoints sind für viele Software\hyp{}Entwickler zunächst unintuitiv.
+            Ein Hardware Breakpoint enthält eine Zuordnungslogik für Adressen. Sie beobachten einen internen
+            Bus oder Befehlszähler und generieren bei einer Übereinstimmung ein Debug-Event\\\citep[]{Styger}.
+
+            Bei der Cortex-M-Prozessorfamilie steuert die \glsit{glo:fpb} die
+            Zuordnungslogik, die selbst bei temporär unveränderbarem Speicher (z.B. Flash-Speicher) Debug-Events
+            generieren kann\citep[vgl.~Kap.~14.5]{Yiu2013}. Hardware Breakpoints sind allerdings limitiert. Bei
+            Cortex-M-Prozessoren können bis zu acht Breakpoints gesetzt werden, von denen sechs für Befehlsadressen sind.
+        \end{description}
+        \item[Single Stepping]
+        \textit{Single Stepping} bezeichnet die Ausführung eines einzelnen Schrittes des Programms. Ein \textit{Schritt}
+        bedeutet in diesem Fall die Ausführung einer Code-Zeile oder eines Maschinenbefehls
+        \footnote{\href{https://sourceware.org/gdb/onlinedocs/gdb/Continuing-and-Stepping.html}
+        {GDB Dokumentation}, Zugriff: 19.07.2017}.
+        Die Ausführung eines Programms kann durch ein \textit{Continue} auch normal weiter geführt werden.
+        Üblicherweise ist in Debugging-Software auch ein \textit{Step-Over}-Befehl verfügbar, der es ermöglicht
+        verschachtelte Aufrufe als einen einzigen Schritt auszuführen.
+        \textit{Single Stepping} wird bei vielen Architekturen durch temporäre Software Breakpoints realisiert.
+        \item[Watchpoint] \textit{Watchpoints} spielen eine wichtige Rolle in der Fehlerfindung von
+        \\Hardware-Applikationen. Sie ermöglichen das Anhalten des Programms, sobald sich der Wert eines Ausdrucks ändert.
+        Als Ausdrücke werden jegliche semantische Konstrukte definiert, die einen Wert liefern.
+        Watchpoints werden auch \textit{Data Breakpoints} genannt.
+
+        Prozessoren der Cortex\hyp{}M\hyp{}Familie enthalten die \glsit{glo:dwt}, welche für die
+        Verwaltung von Watchpoints zuständig ist. ``Es können Breakpoints funktional identisch zum Verhalten der
+        \texttt{bkpt} Anweisung [...] ausgelöst werden, wenn eine definierbare Operation [...] auf einem definierbaren Speicherbereich auf dem Adressbus erkannt
+        wird''\citep[vgl. Kap. 10.1.3]{Asche2017}.
+
+        Außerdem können bestimmte Restriktionen auf den Watchpoint gesetzt werden, so dass dieser nur bei bestimmten
+        Werten oder anderen definierten Umständen ein Debug-Ereignis auslöst.
+        \item[On the fly memory access] \acrshortit{glo:jtag} ermöglicht es dem Debugger während der Ausführung eines Programms
+        Speicherinhalte zu verändern ohne das Programm zu stopppen.
+    \end{description}
+	\subsection{GDB}
+	\label{sec:gdb}
+	Eine der gängigsten Debugging\hyp{}Softwares ist der frei verfügbare \glsit{glo:gdb}. Die Debugging\hyp{}Software
+	wird für die Fehlersuche in Programmen vieler Programmiersprachen eingesetzt und wird von vielen
+	Entwicklungsumgebungen als Debugger-Logik verwendet. Dabei wird dem Nutzer oft eine graphische Bedienung durch eine
+	\glsit{glo:ide} zur Verfügung gestellt.\\
+
+	Der \glsit{glo:gdb} unterstützt mit den folgenden vier Grundfunktionalitäten den Anwendungsentwickler bei der Fehlersuche in
+	seinem Programm
+	\footnote{\href{https://sourceware.org/gdb/}{GDB Produkt Seite}}:
+	\begin{itemize}
+	    \item Starten des Programms unter verschiedenen Umständen und Konfigurationen
+	    \item Ausführung des Programms bei definierten Bedingungen stoppen
+	    \item Zustand des Programms bei gestoppten Zustand analysieren
+	    \item Speicherinhalte verändern, um die Ausführung des Programms zu beeinflussen
+	\end{itemize}
+
+	Außerdem definiert \glsit{glo:gdb} ein \glsit{glo:rsp}, welches die Fehlersuche auf einem externen Gerät
+	ermöglicht. Dabei sendet eine auf dem Host-System laufende Software (zum Beispiel eine \glsit{glo:ide}) die vom Nutzer
+	eingegebenen Befehle über einen Kommunikationsweg (zum Beispiel \glsit{glo:tcp}) an ein Target-System. Dort werden die
+	Befehle von einer Debugging-Software empfangen und ausgeführt.
+
+	\subsubsection{GDB-Remote-Server-Protocol-Beispiel}
+	\textbf{Beispiel:} Der Nutzer setzt einen Breakpoint im Programm-Code. Übermittelt wird die Information über das
+	definierte Protokoll als Nachricht in der Form:\\
+	\begin{Verbatim}[frame=single]
+Z<TYPE><ADDR><LEN>
+    \end{Verbatim}
+
+    \texttt{Z} entspricht der in dem \glsit{glo:rsp} definierten Anweisung zum Setzen von Breakpoints.
+    Zum Löschen eines Breakpoints lautet der Anfang der Nachricht \texttt{z}. In das Feld \texttt{TYPE} wird ein Wert
+    $0$ oder $1$ geschrieben, wobei $0$ einen Software Breakpoint und $1$ einen Hardware Breakpoint setzt. Das darauf folgende
+    Feld \texttt{ADDR} gibt die Adresse an der der Breakpoint gesetzt werden soll an. Schließlich wird in das Feld
+    \texttt{LEN} bei Software Breakpoints die Länge der zu ersetzenden Anweisung (also die Anweisung hinter dem
+    Breakpoint) und bei Hardware Breakpoints die zu betrachtende Speicherstelle geschrieben
+    \footnote{\href{http://davis.lbl.gov/Manuals/GDB/gdb_31.html}{Dokumentation des GDB RSP}}.
+
+    \begin{Verbatim}[frame=single]
+Z011504
+    \end{Verbatim}
+
+    Das oben aufgeführte Beispiel zeigt den Inhalt einer Nachricht, in der ein Software\hyp{}Breakpoint (\texttt{Z0}) an der
+    Adresse 0x1150 (\texttt{1150}) mit der Länge der zu ersetzenden Anweisung (\texttt{4}) gesetzt wird.
+
+    Der \glsit{glo:gdb}-Server muss auf die Anweisung entweder mit einem \texttt{Enn}, wobei \texttt{nn} für eine Error-Nummer
+    steht, oder einem \texttt{Ok} antworten.
+
+    \subsection{In-Circuit-Emulation}
+    \label{sec:ice}
+        \glsit{glo:ice} ermöglicht einem Entwickler Firmware durch die Emulation von Hardware auf Fehler zu untersuchen. Dabei
+        handelt es sich um \textit{Non Intrusive Debugging}. Als  nicht intrusiv werden alle Debugging-Techniken
+        bezeichnet, die weder die Größe des Firmware-Codes noch die Schnelligkeit der Ausführung dieses Codes beeinflussen.\\
+        \textbf{Beispiel:} Das klassische \texttt{printf()}-Debugging beeinflusst beide genannten Aspekte und ändert
+        durch die zusätzlichen Anweisungen außerdem den Programmverlauf. Somit ist dieses Verfahren intrusiv/störend.
+        \\
+
+        Da Speicher in einem Embedded\hyp{}System oft ein kritischer Punkt ist, kann ein durch Debug\hyp{}Anweisungen vergrößerter
+        Speicherbedarf ein Problem darstellen.
+        Ein weiterer kritischer Punkt sind die häufig an ein Embedded-System gestellten Echtzeitanforderungen, die
+        durch eine erhöhte Laufzeit bedroht werden.
+
+        Ein In-Circuit-Emulator ist eine auf Debugging spezialisierte Hardware, welche den Zielprozessor ersetzt.
+        Der Emulator wird dann an den Host-PC angeschlossen und kann über Debugging-Software benutzt werden. Dies
+        ermöglicht einen ungestörten Einblick in den Programmablauf
+        \citep[vgl.~Kap.~1.1]{Rath2005}.
+
+        Moderne \glsplit{glo:ice} nutzen keinen eigenen verbauten Prozessor um die eigentliche Hardware zu emulieren, sondern greifen
+        direkt auf den Zielprozessor mit Hilfe des \acrshortit{glo:jtag}-Standards zu. Hierbei spricht man auch von
+        \textit{On Chip Debugging}.
+
+	\subsection{Tracing}
+	\label{sec:trace}
+	Wie bereits in Abschnitt \ref{sec:requirements} angesprochen, bezeichnet Tracing eine passive Analyse des Programms.
+	Mit Hilfe von Werkzeugen können ausgegebene Tracing\hyp{}Informationen, ``also Programmzähler und sowie Inhalte der durch
+	sie manipulierten Speicherstellen''\citep[vgl.~Kap.~10.1.6]{Asche2017}, analysiert werden. Hierbei werden lediglich
+	Sprungbefehle, also nicht sequentiell aufeinanderfolgende Befehle, aufgeführt.
+
+	Tracing birgt einige Vorteile gegenüber anderen Debugging-Techniken.
+
+	\begin{itemize}
+	    \item Es hat keinen relevanten Einfluss auf die tatsächliche Laufzeit eines Programms.
+	    \item Inkonsistentes Verhalten eines Programms kann nach auftreten direkt analysiert werden. Ein aufgetretener
+	    Fehler, welcher sich nicht einfach reproduzieren lässt, kann durch eine post-portem-Analyse gefunden werden.
+	    \item Zeitinformationen (wie lange die Ausführung eines Programms in einem bestimmten Programmabschnitt verweilt)
+	    werden in Tracing-Informationen mitgeliefert. Somit kann eine umfassendere Leistungsanalyse durchgeführt werden.
+	\end{itemize}
+
+	Der große Nachteil bei Tracing liegt bei der Hardware-Anforderung. Tracing-Hardware benötigt zusätzlichen Platz auf dem
+	\glsit{glo:soc}. Es bewirkt außerdem einen höheren Stromverbrauch\citep[vgl.~S.~3]{Campbell2014}.
+	``bis zu sieben zusätzliche Pins müssen dafür beschaltet werden. Diese Pins sind normalerweise mit anderen
+	Funktionalitäten gemultiplext, woraus folgt, dass diese anderen Funktionalitäten während des Tracens nicht zur
+	Verfügung stehen''\citep[vgl.~Kap.~10.1.6]{Asche2017}.
+
+	Tracing wird oft in Kombination mit einer externen Hardware verwendet, die entweder speziell auf Tracing ausgelegt
+	ist oder einer normalen \acrshortit{glo:jtag}-Debug-Probe.
+
+	\subsection{OpenOCD/PyOCD}
+	\label{sec:openOCD}
+	\glsit{glo:openocd} \footnote{\href{http://openocd.org/}{OpenOCD Webseite \texttt{openocd.org}}}
+	und PyOCD \footnote{\href{https://github.com/mbedmicro/pyOCD}{PyOCD auf github \texttt{github.com/mbedmicro/pyOCD}}}
+	sind zwei Software-Lösungen zum Debuggen von Firmware\hyp{}Programmen auf \glsit{glo:arm}-Cortex-Prozessoren.
+	Das primäre Ziel beider Programme ist es, mit Hilfe einer
+	verbauten Debug-Einheit und dem \glsit{glo:cmsisdap}-Protokoll, ein Firmware-Programm auf den Speicher spielen zu können und
+	entsprechend auf Fehler zu untersuchen. Da in beiden Fällen das \glsit{glo:rsp} verwendet wird, können auf Host-Seite
+	\glsit{glo:gdb}-Clients benutzt werden um das Programm auf Fehler zu untersuchen.
+
+	\begin{figure}
+        \centering
+        \caption{OpenOCD-Module}
+        \label{fig:openocdmodules}
+        \source{\citep[S.~40~Kap.~6.1]{Rath2005}}
+        \includegraphics[scale=0.25]{../Graphiken/openocd_modules}
+    \end{figure}
+
+	Abbildung \ref{fig:openocdmodules} zeigt eine abstrakte modulare Aufteilung des \glsit{glo:openocd}-Programms. Es geht daraus
+	hervor, dass das Kernstück des Programms der \texttt{Daemon} (Hintergrunddienst) ist. Dieser dient als Vermittler zwischen Host- und
+	Target-Seite. Die Module \texttt{Target} und \texttt{Flash} sind Abstraktionen, welche für die Kommunikation bzw.
+	Datenübertragung genutzt werden und prozessorspezifische Informationen und Konfigurationen enthalten.
+
+	Auf Hostseite ist ein \texttt{\glsit{glo:gdb}}-Modul vorhanden, welches vom \glsit{glo:cli}
+	zum Aufruf von Debugging-Befehlen verwendet werden kann, aber ebenso auch ein direktes Interface zu einem
+	\glsit{glo:gdb}-Frontend, also zum Beispiel eine \glsit{glo:ide}, bereitstellt.
+	Über das \glsit{glo:cli} kann das Firmware-Programm durch einen
+	von den \texttt{Flash}- oder \texttt{Target}-Modulen zur Verfügung gestellten Befehle auf den Prozessor gespielt werden.
+
+	Auf Target-Seite (abstrahiert im Programm) ist ein \texttt{JTAG}-Modul vorhanden, welches für die Umsetzung der
+	\acrshortit{glo:jtag}-Befehle zuständig ist. Alle vom Daemon empfangenen Befehle werden in das \acrshortit{glo:jtag}-spezifische Protokoll übertragen
+	und an die Ziel-Hardware gesendet. Das \texttt{JTAG}-Modul enthält außerdem die Umsetzung des
+	\glsit{glo:cmsisdap}-Protokolls für die Übertragung über \glsit{glo:usb}.
+
+	Grundsätzlich ist eine Entwicklungsumgebung mit \glsit{glo:openocd} folgendermaßen aufgestellt:
+
+	\begin{itemize}
+	    \item \glsit{glo:openocd} Daemon wird gestartet
+	    \begin{itemize}
+	        \item ein lokaler \glsit{glo:gdb}-Server wird gestartet
+	        \item ein lokaler \glsit{glo:telnet}-Server wird gestartet
+	        \item ein lokaler \glsit{glo:tcl}-Server wird gestartet
+	    \end{itemize}
+	    \item Der Entwickler kann sein kompiliertes Firmware-Programm über das \glsit{glo:cli} auf den Chip herunterladen
+	    \item Der Entwickler kann Breakpoints oder andere Debugging-Anweisungen über einen \glsit{glo:gdb}-Client
+	    (z.B. \glsit{glo:ide} oder \glsit{glo:cli}), welcher mit dem \glsit{glo:gdb}-Server kommunizieren muss, an den Prozessor senden
+	    \item Der Daemon empfängt alle Befehle und ``verpackt'' sie in die entsprechenden Protokolle
+	    (\acrshortit{glo:jtag}/\acrshortit{glo:swd} und anschließend \glsit{glo:cmsisdap})
+	\end{itemize}
+
+	\glsit{glo:openocd} ist neben PyOCD eine der wenigen frei verfügbaren Softwares für On-Chip-Debugging und ist
+	deshalb sehr weit verbreitet.
